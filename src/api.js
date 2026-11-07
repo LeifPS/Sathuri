@@ -87,7 +87,10 @@ async function createWord(request, env, base) {
 
   let ai;
   try { ai = await askAI(env, raw); }
-  catch (e) { return json({ error: 'Die KI ist gerade nicht erreichbar. Versuche es später noch einmal.' }, 502); }
+  catch (e) {
+    console.error('KI-Fehler:', e && e.message);
+    return json({ error: 'Die KI ist gerade nicht erreichbar. Versuche es später noch einmal.', detail: String((e && e.message) || e).slice(0, 300) }, 502);
+  }
   const norm = normalize(ai);
   if (!norm.ok) return json({ error: norm.error }, 422);
 
