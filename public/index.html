@@ -1333,7 +1333,7 @@ if (typeof module !== 'undefined') module.exports = {glyphSVG, glyphParts, GLYPH
 <script>
 (function () {
 'use strict';
-const ENG = createEngine(LEX);
+let ENG = createEngine(LEX);
 const $ = (s, r) => (r || document).querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -1387,6 +1387,49 @@ function noteHTML(notes, extra) {
   if (extra) parts.push(extra);
   return parts.length ? `<div class="notes">${parts.join('')}</div>` : '';
 }
+/* ---- Gemeinsame Wörter (Cloudflare): fehlende Wörter anlegen, gespeicherte Wörter laden ---- */
+const NEWWORD_RE = /^[A-Za-zÄÖÜäöüß]{2,30}$/;
+let wordMsg = '', busyWord = '';
+function addWords(list) {
+  let n = 0;
+  for (const e of list) {
+    const { pos, ...entry } = e;
+    const arr = pos === 'n' ? LEX.nouns : pos === 'v' ? LEX.verbs : pos === 'a' ? LEX.adjs : null;
+    if (!arr || arr.some(x => x.c === entry.c)) continue;
+    arr.push(entry); n++;
+  }
+  if (n) { ENG = createEngine(LEX); DICT = ENG.dictionary(); renderDict(); }
+  return n;
+}
+function newWordHTML(notes) {
+  const cands = [...new Set([...(notes.unknown || []), ...(notes.names || [])])].filter(w => NEWWORD_RE.test(w));
+  let h = '';
+  if (cands.length) {
+    h += '<p><span class="w">Wort für alle anlegen:</span> Tippe auf ein Wort. Eine KI schreibt die deutschen Formen, die Regeln der Sprache bauen das Sathuri-Wort. Danach steht es für alle im Übersetzer und Wörterbuch.</p>' +
+      '<div class="keyrow" style="padding:0 0 8px">' + cands.map(w => `<button class="chip" type="button" data-new="${esc(w)}"${busyWord ? ' disabled' : ''}>${esc(w)}${busyWord === w ? ' …' : ''}</button>`).join('') + '</div>';
+  }
+  if (wordMsg) h += `<p class="wordmsg" style="color:var(--rune)">${esc(wordMsg)}</p>`;
+  return h;
+}
+async function createWord(w) {
+  if (busyWord) return;
+  busyWord = w; wordMsg = 'Das Wort wird erstellt. Das dauert ein paar Sekunden …'; run();
+  try {
+    const r = await fetch('/api/words', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ word: w }) });
+    let j = {};
+    try { j = await r.json(); } catch (e) { /* keine JSON-Antwort */ }
+    if (!j.entry) throw new Error(j.error || 'Das Wort konnte nicht angelegt werden.');
+    addWords([j.entry]);
+    wordMsg = j.existing ? `„${w}“ gibt es schon: ${j.entry.c || ''}`.trim() : `Neues Wort für alle gespeichert: ${w} = ${j.entry.c}`;
+  } catch (e) {
+    wordMsg = e instanceof TypeError ? 'Neue Wörter lassen sich nur auf der veröffentlichten Seite anlegen, mit Internet.' : e.message;
+  }
+  busyWord = ''; run();
+}
+function loadSharedWords() {
+  if (typeof fetch !== 'function' || !/^https?:$/.test(location.protocol)) return;
+  fetch('/api/words').then(r => (r.ok ? r.json() : null)).then(j => { if (j && Array.isArray(j.words) && addWords(j.words)) run(); }).catch(() => {});
+}
 function run() {
   const txt = inp.value;
   if (!txt.trim()) { out.innerHTML = '<p class="empty">Tippe oben einen Satz ein oder tippe auf ein Beispiel.</p>'; return; }
@@ -1401,7 +1444,7 @@ function run() {
       <hr class="hr">
       <h2>Wort für Wort</h2>
       <div class="gloss">${glossHTML(r.tokens)}</div>
-      ${noteHTML(r.notes)}
+      ${noteHTML(r.notes, newWordHTML(r.notes))}
     </div>`;
   } else {
     const r = ENG.translateCON(txt);
@@ -1424,6 +1467,9 @@ inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(ru
 $('#examples').addEventListener('click', e => {
   const b = e.target.closest('button[data-i]'); if (!b) return;
   inp.value = (dir === 'de2sa' ? EX_DE : EX_SA)[+b.dataset.i]; run();
+});
+out.addEventListener('click', e => {
+  const b = e.target.closest('button[data-new]'); if (b) createWord(b.dataset.new);
 });
 $('#swap').addEventListener('click', () => {
   const t = $('#t1');
@@ -1453,7 +1499,7 @@ $('#kbd').addEventListener('click', e => {
 });
 
 /* ---- Wörterbuch ---- */
-const DICT = ENG.dictionary();
+let DICT = ENG.dictionary();
 const GROUPS = [['alle', 'Alle'], ['Nomen', 'Nomen'], ['Verb', 'Verben'], ['Adjektiv', 'Adjektive'], ['sonst', 'Sonstige']];
 let fgroup = 'alle';
 function gOf(p) { return p === 'Nomen' || p === 'Verb' || p === 'Adjektiv' ? p : 'sonst'; }
@@ -1561,7 +1607,7 @@ function grammarHTML() {
   ${ex('Ich habe zwei Katzen und einen Hund.')}
 
   <h3>9. Was der Übersetzer nicht kann</h3>
-  <p>Der Übersetzer arbeitet mit Regeln und etwa 500 Wörtern. Das geht nicht: Relativsätze („der Mann, der …“), Passiv, trennbare und reflexive Verben, Konjunktiv und feste Redewendungen. Unbekannte Wörter bleiben unverändert und werden markiert. Namen bleiben ebenfalls stehen. Bei langen Sätzen hilft es, sie in kurze Sätze zu teilen.</p>`;
+  <p>Der Übersetzer arbeitet mit Regeln und etwa 500 Wörtern. Das geht nicht: Relativsätze („der Mann, der …“), Passiv, trennbare und reflexive Verben, Konjunktiv und feste Redewendungen. Unbekannte Wörter bleiben zunächst unverändert und werden markiert. Im Übersetzer kannst du sie mit einem Tipp anlegen, dann stehen sie für alle im Wörterbuch. Namen bleiben stehen. Bei langen Sätzen hilft es, sie in kurze Sätze zu teilen.</p>`;
 }
 $('#p-grammatik').innerHTML = grammarHTML();
 
@@ -1600,6 +1646,7 @@ window.addEventListener('hashchange', showTab);
 showTab();
 setDir('de2sa');
 renderDict();
+loadSharedWords();
 })();
 </script>
 </body>
