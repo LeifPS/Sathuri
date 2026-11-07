@@ -45,10 +45,10 @@ export async function askAI(env, word) {
   else if (r && typeof r === 'object' && 'response' in r) r = r.response;                                                          // Workers-AI-Format
   if (typeof r === 'string') {
     const m = r.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('KI-Antwort ohne JSON');
+    if (!m) throw new Error('KI-Antwort ohne JSON: ' + JSON.stringify(res).slice(0, 250));
     r = JSON.parse(m[0]);
   }
-  if (!r || typeof r !== 'object') throw new Error('KI-Antwort ungültig');
+  if (!r || typeof r !== 'object') throw new Error('KI-Antwort ungültig: ' + JSON.stringify(res).slice(0, 250));
   return r;
 }
 
