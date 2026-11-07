@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sathuri Übersetzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Nachthimmel-Manuskript: tiefes Indigo, Runen in Bernstein. Layout: eine Spalte, Zeichen im Mittelpunkt. */
+  --ink: #14122b;
+  --ink-2: #1c1a3f;
+  --ink-3: #272453;
+  --line: #3b3777;
+  --text: #ece9f8;
+  --muted: #a8a4cf;
+  --rune: #f0b45a;
+  --rune-dim: #b98c4a;
+  --warn: #ff9f8c;
+  --display: "Uncial Antiqua", "Palatino Linotype", Georgia, serif;
+  --body: "Alegreya Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--text); }
+body { font-family: var(--body); font-size: 18px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+button, input, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 56px; }
+
+/* Kopf */
+header { padding: 28px 0 8px; text-align: center; }
+.hero-glyphs { display: flex; justify-content: center; gap: 0; color: var(--rune); filter: drop-shadow(0 0 10px rgba(240,180,90,.35)); }
+.hero-glyphs .gl { --h: 96px; --sw: 1.35; }
+h1 { font-family: var(--display); font-weight: 400; font-size: 42px; letter-spacing: .04em; margin: 10px 0 2px; color: var(--text); }
+.sub { margin: 0; color: var(--muted); font-size: 17px; text-wrap: balance; }
+
+/* Reiter */
+nav.tabs { display: flex; gap: 4px; margin: 22px -16px 18px; padding: 0 16px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+nav.tabs::-webkit-scrollbar { display: none; }
+nav.tabs a { flex: 0 0 auto; padding: 10px 14px 11px; color: var(--muted); text-decoration: none; font-weight: 500; letter-spacing: .02em; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+nav.tabs a[aria-current="page"] { color: var(--rune); border-bottom-color: var(--rune); }
+nav.tabs a:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--rune); outline-offset: 2px; border-radius: 6px; }
+section.panel[hidden] { display: none; }
+h2 { font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--rune); margin: 0 0 10px; font-weight: 700; }
+h3 { font-size: 20px; margin: 26px 0 6px; font-weight: 700; color: var(--text); text-wrap: balance; }
+p { margin: 0 0 12px; max-width: 65ch; }
+.muted { color: var(--muted); }
+code, .sat { font-family: var(--body); font-style: italic; color: var(--rune); font-weight: 500; }
+
+/* Übersetzer */
+.dirbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.dirlabel { font-weight: 700; font-size: 19px; flex: 1; text-align: center; }
+.iconbtn { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--ink-2); display: grid; place-items: center; cursor: pointer; color: var(--rune); }
+.iconbtn:hover { background: var(--ink-3); }
+textarea#in { width: 100%; min-height: 112px; resize: vertical; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); font-size: 20px; line-height: 1.4; }
+textarea#in::placeholder { color: #7f7ba8; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 12px; font-size: 16px; cursor: pointer; text-align: left; }
+.chip:hover { color: var(--text); border-color: var(--rune-dim); }
+.chip[aria-pressed="true"] { background: var(--rune); color: #231a07; border-color: var(--rune); font-weight: 700; }
+details.kbd { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--ink-2); }
+details.kbd summary { cursor: pointer; padding: 11px 14px; font-weight: 500; color: var(--rune); }
+.keys { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 10px 12px; }
+.key { border: 1px solid var(--line); background: var(--ink); border-radius: 10px; padding: 6px 2px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--rune); }
+.key:hover { background: var(--ink-3); }
+.key .gl { --h: 52px; --sw: 1.5; }
+.key span { font-size: 14px; color: var(--muted); }
+.keyrow { display: flex; gap: 8px; padding: 0 10px 12px; flex-wrap: wrap; }
+.keyrow .chip { color: var(--text); }
+.card { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--ink-2); padding: 16px; }
+.card h2 { margin-bottom: 8px; }
+.big { font-size: 26px; line-height: 1.35; margin: 0 0 6px; max-width: none; overflow-wrap: anywhere; }
+.big.sat-out { color: var(--rune); font-style: italic; font-weight: 500; }
+.rowhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.copy { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 15px; }
+.copy:hover { border-color: var(--rune-dim); }
+.hr { height: 1px; background: var(--line); margin: 16px 0; border: 0; }
+
+/* Schrift im Text */
+.script { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 26px; color: var(--rune); padding: 6px 0; }
+.script .wd { display: inline-flex; gap: 0; align-items: flex-start; }
+.script .wd.lat { font-style: italic; color: var(--warn); font-size: 18px; }
+.script .gl { --h: 62px; --sw: 1.5; }
+.pn { display: inline-block; position: relative; width: 16px; height: 62px; }
+.pn::before, .pn::after { content: ""; position: absolute; left: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rune); }
+.pn-dot::before { top: 34px; } .pn-dot::after { display: none; }
+.pn-comma::before { top: 28px; width: 3px; height: 22px; border-radius: 2px; left: 6px; } .pn-comma::after { display: none; }
+.pn-q::before { top: 24px; } .pn-q::after { top: 40px; }
+.pn-ex::before { top: 18px; width: 3px; height: 20px; border-radius: 2px; left: 6px; } .pn-ex::after { top: 44px; }
+.gl { display: block; height: var(--h, 48px); width: calc(var(--h, 48px) * 72 / 118); fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Wort für Wort */
+.gloss { display: flex; flex-wrap: wrap; gap: 8px 6px; }
+.cell { display: flex; flex-direction: column; align-items: flex-start; padding: 6px 10px; border-radius: 10px; background: var(--ink); border: 1px solid var(--line); min-width: 0; }
+.cell .s { font-style: italic; color: var(--rune); font-weight: 500; font-size: 18px; }
+.cell .d { font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+.cell.unk { border-style: dashed; border-color: var(--warn); }
+.cell.unk .s, .cell.unk .d { color: var(--warn); }
+.cell.pn-cell { display: none; }
+.notes { margin-top: 12px; font-size: 16px; color: var(--muted); }
+.notes p { margin: 4px 0; }
+.notes .w { color: var(--warn); }
+.empty { color: var(--muted); }
+.live { position: absolute; left: -9999px; }
+
+/* Wörterbuch */
+.search { display: flex; gap: 8px; }
+.search input { flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); font-size: 19px; min-width: 0; }
+.count { color: var(--muted); font-size: 15px; margin: 10px 0 6px; }
+.dict details { border-bottom: 1px solid var(--line); }
+.dict summary { list-style: none; display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 10px; align-items: baseline; padding: 11px 2px; cursor: pointer; }
+.dict summary::-webkit-details-marker { display: none; }
+.dict .c { font-style: italic; color: var(--rune); font-weight: 500; font-size: 20px; overflow-wrap: anywhere; }
+.dict .g { overflow-wrap: anywhere; }
+.dict .p { font-size: 13px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.dict .body { padding: 2px 2px 16px; }
+.dict .body .info { color: var(--muted); margin: 0 0 8px; font-size: 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; }
+td.s { color: var(--rune); font-style: italic; font-weight: 500; }
+.tablewrap { overflow-x: auto; margin: 8px 0 14px; }
+
+/* Grammatik */
+.ex { margin: 10px 0 14px; padding: 10px 14px; border-left: 3px solid var(--rune-dim); background: var(--ink-2); border-radius: 0 10px 10px 0; }
+.ex .de { color: var(--muted); font-size: 16px; }
+.ex .sa { color: var(--rune); font-style: italic; font-weight: 500; font-size: 21px; overflow-wrap: anywhere; }
+.ex .gl2 { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+.rule { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 8px 0 14px; }
+.rule b { color: var(--rune); font-style: italic; font-weight: 500; }
+
+/* Schrift */
+.sylgrid { display: grid; grid-template-columns: 44px repeat(5, 1fr); gap: 6px; align-items: center; margin: 12px 0; }
+.sylgrid .h { color: var(--muted); text-align: center; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+.sylgrid .rl { color: var(--muted); font-size: 18px; text-align: right; padding-right: 6px; font-style: italic; }
+.sylcell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; border-radius: 10px; color: var(--rune); }
+.sylcell .gl { --h: 64px; --sw: 1.6; }
+.sylcell span { font-size: 14px; color: var(--muted); }
+.legend { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; text-align: center; font-size: 14px; color: var(--muted); }
+.legend .gl { --h: 64px; margin: 0 auto 2px; color: var(--rune); --sw: 1.6; }
+
+@media (min-width: 640px) {
+  body { font-size: 19px; }
+  h1 { font-size: 54px; }
+  .hero-glyphs .gl { --h: 120px; }
+  .script .gl { --h: 74px; }
+  .keys { grid-template-columns: repeat(10, 1fr); }
+}
+@media (max-width: 420px) {
+  .dict summary { grid-template-columns: 1fr 1fr; }
+  .dict .p { grid-column: 1 / -1; }
+  .keys { grid-template-columns: repeat(5, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: rise .35s ease-out both; }
+  @keyframes rise { from { opacity: .0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<svg id="sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs></defs></svg>
+<div class="wrap">
+  <header>
+    <div class="hero-glyphs" id="hero" role="img" aria-label="Sathuri in eigener Schrift"></div>
+    <h1>Sathuri</h1>
+    <p class="sub">Die Sprache der Mysteriösen aus dem Sanktum Magus</p>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <a href="#uebersetzer" data-tab="uebersetzer">Übersetzer</a>
+    <a href="#woerterbuch" data-tab="woerterbuch">Wörterbuch</a>
+    <a href="#grammatik" data-tab="grammatik">Grammatik</a>
+    <a href="#schrift" data-tab="schrift">Schrift</a>
+  </nav>
+
+  <!-- Übersetzer -->
+  <section class="panel" id="p-uebersetzer">
+    <div class="dirbar">
+      <div class="dirlabel" id="dirlabel">Deutsch → Sathuri</div>
+      <button class="iconbtn" id="swap" type="button" aria-label="Richtung wechseln" title="Richtung wechseln">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>
+      </button>
+    </div>
+    <label for="in" class="live">Eingabe</label>
+    <textarea id="in" rows="3" spellcheck="false" autocapitalize="sentences" placeholder="Schreibe einen Satz …"></textarea>
+    <div class="chips" id="examples" aria-label="Beispiele"></div>
+    <details class="kbd" id="kbd" hidden>
+      <summary>Zeichen-Tastatur</summary>
+      <div class="keys" id="keys"></div>
+      <div class="keyrow">
+        <button class="chip" type="button" data-act="space">Leerzeichen</button>
+        <button class="chip" type="button" data-act="back">Löschen</button>
+        <button class="chip" type="button" data-ins=".">.</button>
+        <button class="chip" type="button" data-ins=",">,</button>
+        <button class="chip" type="button" data-ins="?">?</button>
+        <button class="chip" type="button" data-ins="!">!</button>
+      </div>
+    </details>
+    <div id="out" aria-live="polite"></div>
+  </section>
+
+  <!-- Wörterbuch -->
+  <section class="panel" id="p-woerterbuch" hidden>
+    <div class="search">
+      <label for="q" class="live">Suche</label>
+      <input id="q" type="search" placeholder="Deutsch oder Sathuri suchen …" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="chips" id="filters"></div>
+    <div class="count" id="count"></div>
+    <div class="dict" id="dict"></div>
+  </section>
+
+  <!-- Grammatik -->
+  <section class="panel" id="p-grammatik" hidden></section>
+
+  <!-- Schrift -->
+  <section class="panel" id="p-schrift" hidden></section>
+</div>
+
+<script>
+/*@LEX@*/
+/*@ENGINE@*/
+/*@GLYPHS@*/
+</script>
+<script>
+(function () {
+'use strict';
+const ENG = createEngine(LEX);
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- Zeichen-Sprite ---- */
+$('#sprite defs').innerHTML = GLYPH_LIST.map(s => `<symbol id="g-${s}" viewBox="${GLYPH_VIEW}">${glyphParts(s)}</symbol>`).join('');
+const glyph = s => `<svg class="gl" viewBox="${GLYPH_VIEW}" aria-hidden="true"><use href="#g-${s}"/></svg>`;
+$('#hero').innerHTML = ['sa', 'thu', 'ri'].map(glyph).join('');
+function wordScript(w) {
+  const lw = w.toLowerCase().replace(/[-'’]/g, '');
+  if (ENG.isSathuri(lw)) return `<span class="wd">${ENG.syllabify(lw).map(glyph).join('')}</span>`;
+  return `<span class="wd lat">${esc(w)}</span>`;
+}
+const PN = {'.': 'pn-dot', ',': 'pn-comma', '?': 'pn-q', '!': 'pn-ex', ';': 'pn-dot', ':': 'pn-dot'};
+function scriptHTML(tokens) {
+  return tokens.map(t => t.k === 'p' ? `<span class="pn ${PN[t.w] || 'pn-dot'}"></span>` : wordScript(t.w)).join('');
+}
+function glossHTML(tokens) {
+  return tokens.filter(t => t.k !== 'p').map(t =>
+    `<div class="cell${t.k === 'unk' ? ' unk' : ''}"><span class="s">${esc(t.w)}</span><span class="d">${esc(t.g)}</span></div>`).join('');
+}
+
+/* ---- Übersetzer ---- */
+let dir = 'de2sa';
+const inp = $('#in'), out = $('#out');
+const EX_DE = [
+  'Die mysteriösen Wächter beschützen das Sanktum.',
+  'Ich sehe die Sterne über dem Wald.',
+  'Wo wohnt der König?',
+  'Wir können das Geheimnis nicht verstehen.',
+  'Der alte Zauberer gibt dem Kind einen Kristall.',
+  'Ich werde morgen in die Stadt gehen.',
+];
+const EX_SA = EX_DE.map(t => ENG.translateDE(t).text);
+function setDir(d, keepText) {
+  dir = d;
+  $('#dirlabel').textContent = d === 'de2sa' ? 'Deutsch → Sathuri' : 'Sathuri → Deutsch';
+  inp.placeholder = d === 'de2sa' ? 'Schreibe einen deutschen Satz …' : 'Schreibe einen Satz auf Sathuri …';
+  inp.autocapitalize = d === 'de2sa' ? 'sentences' : 'off';
+  $('#kbd').hidden = d === 'de2sa';
+  const list = d === 'de2sa' ? EX_DE : EX_SA;
+  $('#examples').innerHTML = list.map((t, i) => `<button class="chip" type="button" data-i="${i}">${esc(t)}</button>`).join('');
+  if (!keepText) inp.value = list[0];
+  run();
+}
+function copyBtn(id) { return `<button class="copy" type="button" data-copy="${id}">Kopieren</button>`; }
+function noteHTML(notes, extra) {
+  const parts = [];
+  const unk = [...new Set(notes.unknown)];
+  if (unk.length) parts.push(`<p><span class="w">Nicht im Wörterbuch:</span> ${unk.map(esc).join(', ')}. Diese Wörter bleiben unverändert.</p>`);
+  if (notes.names && notes.names.length) parts.push(`<p>Als Name oder Fremdwort übernommen: ${notes.names.map(esc).join(', ')}.</p>`);
+  if (extra) parts.push(extra);
+  return parts.length ? `<div class="notes">${parts.join('')}</div>` : '';
+}
+function run() {
+  const txt = inp.value;
+  if (!txt.trim()) { out.innerHTML = '<p class="empty">Tippe oben einen Satz ein oder tippe auf ein Beispiel.</p>'; return; }
+  if (dir === 'de2sa') {
+    const r = ENG.translateDE(txt);
+    out.innerHTML = `<div class="card">
+      <div class="rowhead"><h2>Sathuri</h2>${copyBtn('t1')}</div>
+      <p class="big sat-out" id="t1">${esc(r.text)}</p>
+      <hr class="hr">
+      <h2>In Schrift</h2>
+      <div class="script" role="img" aria-label="${esc(r.text)}">${scriptHTML(r.tokens)}</div>
+      <hr class="hr">
+      <h2>Wort für Wort</h2>
+      <div class="gloss">${glossHTML(r.tokens)}</div>
+      ${noteHTML(r.notes)}
+    </div>`;
+  } else {
+    const r = ENG.translateCON(txt);
+    const extra = (r.notes.ira ? '<p><i>ira</i> kann er, sie oder es bedeuten. Die Übersetzung nimmt „er“.</p>' : '') + '<p>Sathuri hat keine Artikel. Die Übersetzung wählt „der, die, das“.</p>';
+    out.innerHTML = `<div class="card">
+      <div class="rowhead"><h2>Deutsch</h2>${copyBtn('t1')}</div>
+      <p class="big" id="t1">${esc(r.text)}</p>
+      <hr class="hr">
+      <h2>Eingabe in Schrift</h2>
+      <div class="script" role="img" aria-label="${esc(txt)}">${scriptHTML(r.tokens)}</div>
+      <hr class="hr">
+      <h2>Wort für Wort</h2>
+      <div class="gloss">${glossHTML(r.tokens)}</div>
+      ${noteHTML(r.notes, extra)}
+    </div>`;
+  }
+}
+let timer = 0;
+inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 120); });
+$('#examples').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return;
+  inp.value = (dir === 'de2sa' ? EX_DE : EX_SA)[+b.dataset.i]; run();
+});
+$('#swap').addEventListener('click', () => {
+  const t = $('#t1');
+  const carry = t && out.querySelector('.card') ? t.textContent : inp.value;
+  setDir(dir === 'de2sa' ? 'sa2de' : 'de2sa', true);
+  inp.value = carry; run();
+});
+out.addEventListener('click', e => {
+  const b = e.target.closest('button[data-copy]'); if (!b) return;
+  const text = $('#' + b.dataset.copy).textContent;
+  const done = () => { b.textContent = 'Kopiert'; setTimeout(() => { b.textContent = 'Kopieren'; }, 1400); };
+  try { navigator.clipboard.writeText(text).then(done, () => { selectText($('#' + b.dataset.copy)); b.textContent = 'Markiert'; }); }
+  catch (err) { selectText($('#' + b.dataset.copy)); b.textContent = 'Markiert'; }
+});
+function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+/* Tastatur */
+$('#keys').innerHTML = GLYPH_LIST.map(s => `<button class="key" type="button" data-syl="${s}" aria-label="${s}">${glyph(s)}<span>${s}</span></button>`).join('');
+$('#kbd').addEventListener('click', e => {
+  const k = e.target.closest('button'); if (!k) return;
+  if (k.dataset.syl) inp.value += k.dataset.syl;
+  else if (k.dataset.ins) inp.value = inp.value.replace(/\s+$/, '') + k.dataset.ins + ' ';
+  else if (k.dataset.act === 'space') inp.value += ' ';
+  else if (k.dataset.act === 'back') inp.value = inp.value.slice(0, -1);
+  else return;
+  run();
+});
+
+/* ---- Wörterbuch ---- */
+const DICT = ENG.dictionary();
+const GROUPS = [['alle', 'Alle'], ['Nomen', 'Nomen'], ['Verb', 'Verben'], ['Adjektiv', 'Adjektive'], ['sonst', 'Sonstige']];
+let fgroup = 'alle';
+function gOf(p) { return p === 'Nomen' || p === 'Verb' || p === 'Adjektiv' ? p : 'sonst'; }
+$('#filters').innerHTML = GROUPS.map(([k, l]) => `<button class="chip" type="button" data-g="${k}" aria-pressed="${k === 'alle'}">${l}</button>`).join('');
+function renderDict() {
+  const q = $('#q').value.trim().toLowerCase();
+  const rows = DICT.map((r, i) => [r, i]).filter(([r]) => (fgroup === 'alle' || gOf(r.pos) === fgroup) &&
+    (!q || r.de.toLowerCase().includes(q) || r.c.includes(q) || r.info.toLowerCase().includes(q)));
+  $('#count').textContent = rows.length + (rows.length === 1 ? ' Wort' : ' Wörter');
+  $('#dict').innerHTML = rows.map(([r, i]) =>
+    `<details data-i="${i}"><summary><span class="c">${esc(r.c)}</span><span class="g">${esc(r.de)}</span><span class="p">${esc(r.pos)}</span></summary><div class="body"></div></details>`).join('');
+}
+$('#q').addEventListener('input', renderDict);
+$('#filters').addEventListener('click', e => {
+  const b = e.target.closest('button[data-g]'); if (!b) return;
+  fgroup = b.dataset.g;
+  document.querySelectorAll('#filters .chip').forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+  renderDict();
+});
+$('#dict').addEventListener('toggle', e => {
+  const d = e.target; if (!d.open) return;
+  const body = $('.body', d); if (body.dataset.done) return;
+  const row = DICT[+d.dataset.i];
+  let h = '';
+  if (row.info) h += `<p class="info">${esc(row.info)}</p>`;
+  const par = ENG.paradigm(row);
+  if (par) {
+    const noun = row.pos === 'Nomen' || row.pos === 'Adjektiv';
+    h += `<div class="tablewrap"><table><thead><tr><th>${noun ? 'Fall' : 'Form'}</th><th>${noun ? 'Einzahl' : 'Sathuri'}</th>${noun ? '<th>Mehrzahl</th>' : ''}</tr></thead><tbody>` +
+      par.map(p => `<tr><td>${esc(p[0])}</td><td class="s">${esc(p[1])}</td>${noun ? `<td class="s">${esc(p[2])}</td>` : ''}</tr>`).join('') + '</tbody></table></div>';
+  }
+  h += `<div class="script">${wordScript(row.c)}</div>`;
+  body.innerHTML = h; body.dataset.done = '1';
+}, true);
+
+/* ---- Grammatik ---- */
+function ex(de) {
+  const r = ENG.translateDE(de);
+  return `<div class="ex"><div class="de">${esc(de)}</div><div class="sa">${esc(r.text)}</div><div class="gl2">${esc(r.tokens.filter(t => t.k !== 'p').map(t => t.g).join(' · '))}</div></div>`;
+}
+function grammarHTML() {
+  const C = ENG.CASES, S = ENG.SUF, N = ENG.CASE_NAME;
+  const Q = {nom:'wer, was?', akk:'wen, was?', gen:'wessen? (auch: von)', dat:'wem? wohin? (auch: zu, für)', loc:'wo? (in, an, bei)', abl:'woher? (aus, als beim Vergleich)', ins:'womit? (mit, durch)'};
+  const caseRows = C.map(c => `<tr><td>${N[c]}</td><td class="s">${S[c] ? '-' + S[c] : '(ohne Endung)'}</td><td class="s">${ENG.inflN('ranuko', false, c)}</td><td>${Q[c]}</td></tr>`).join('');
+  return `
+  <h2>Grammatik</h2>
+  <p>Sathuri ist streng regelmäßig. Es gibt keine Ausnahmen, keine Artikel und keine Verbendungen für Personen. Die Beispielsätze unten stammen direkt aus dem Übersetzer.</p>
+
+  <h3>1. Laute und Silben</h3>
+  <p>13 Konsonanten und 5 Vokale: <code>k t s l r m n v z d h th sh</code> und <code>a e i o u</code>. <i>th</i> und <i>sh</i> sind je ein Laut. Jede Silbe besteht aus einem Konsonanten und einem Vokal, am Wortanfang darf auch ein Vokal allein stehen. Zwei Konsonanten stehen nie hintereinander. So ergeben sich genau 70 Silben, und jede hat ein eigenes Schriftzeichen.</p>
+
+  <h3>2. Die Wortart steht am Wortende</h3>
+  <div class="rule"><b>-a / -o</b><span>Nomen: <i class="sat">ranuko</i> (Haus), <i class="sat">mashora</i> (Magie)</span>
+  <b>-u</b><span>Verben: <i class="sat">kelu</i> (gehen), <i class="sat">vesu</i> (sehen)</span>
+  <b>-i</b><span>Adjektive: <i class="sat">sathuri</i> (heilig), <i class="sat">mithari</i> (mysteriös)</span>
+  <b>-e</b><span>Adverbien, Bindewörter, Zahlen: <i class="sat">madeshe</i> (hier)</span></div>
+
+  <h3>3. Nomen: Einzahl, Mehrzahl und sieben Fälle</h3>
+  <p>Die Mehrzahl endet auf <code>-ki</code>. Danach folgt die Fallendung. Beides wird an den Stamm angehängt: <code>ranuko-ki-no</code> (die Häuser, Akkusativ).</p>
+  <div class="tablewrap"><table><thead><tr><th>Fall</th><th>Endung</th><th>Beispiel</th><th>Frage</th></tr></thead><tbody>${caseRows}</tbody></table></div>
+  ${ex('Ich sehe das Haus.')}
+  ${ex('Der Mann gibt der Frau das Buch.')}
+  ${ex('Die Kinder spielen mit den Tonlingen.')}
+  <p>„In“ mit Bewegung („in die Stadt“) steht im Dativ, ohne Bewegung („in der Stadt“) im Lokativ.</p>
+
+  <h3>4. Adjektive und Vergleiche</h3>
+  <p>Adjektive stehen hinter dem Nomen und bekommen dieselbe Mehrzahl- und Fallendung. Als Aussage mit „sein“ bleiben sie ohne Endung. Vergleiche bildet man mit <code>mo</code> (mehr) und <code>ro</code> (am meisten). Das Verglichene steht im Ablativ.</p>
+  ${ex('Die Katze des Königs ist müde.')}
+  ${ex('Die alten Bücher sind heilig und mysteriös.')}
+  ${ex('Sie ist größer als ich.')}
+  ${ex('Der Mond ist am schönsten.')}
+
+  <h3>5. Pronomen und Besitz</h3>
+  <div class="tablewrap"><table><thead><tr><th>Person</th><th>Nominativ</th><th>Akkusativ</th><th>Dativ</th><th>Besitz (Genitiv)</th></tr></thead><tbody>
+  ${[['ich',1,'sg'],['du',2,'sg'],['er / sie / es',3,'sg'],['wir',1,'pl'],['ihr',2,'pl'],['sie (Mehrzahl)',3,'pl']].map(([l,p,n]) => `<tr><td>${l}</td><td class="s">${ENG.pronCon(p,n,'nom')}</td><td class="s">${ENG.pronCon(p,n,'akk')}</td><td class="s">${ENG.pronCon(p,n,'dat')}</td><td class="s">${ENG.pronCon(p,n,'gen')}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p>Der Besitzer steht im Genitiv und vor dem Besitz. So entstehen auch „mein“, „dein“ und so weiter.</p>
+  ${ex('Mein Freund liebt die Magie.')}
+  ${ex('Das Haus des Zauberers ist dunkel.')}
+
+  <h3>6. Verben</h3>
+  <div class="tablewrap"><table><thead><tr><th>Form</th><th>Endung</th><th>Beispiel</th></tr></thead><tbody>
+  <tr><td>Gegenwart</td><td class="s">(Stamm)</td><td class="s">kelu</td></tr>
+  <tr><td>Vergangenheit</td><td class="s">-ra</td><td class="s">kelura</td></tr>
+  <tr><td>Zukunft</td><td class="s">-sha</td><td class="s">kelusha</td></tr>
+  <tr><td>gerade dabei</td><td class="s">-vo</td><td class="s">keluvo (auch keluvora)</td></tr>
+  <tr><td>Befehl</td><td class="s">-de</td><td class="s">kelude</td></tr></tbody></table></div>
+  <p>Das Verb ändert sich nicht nach der Person. Wer handelt, sagt das Pronomen. Hilfsverben für Perfekt und Futur gibt es nicht. Bei Modalverben (können, müssen, wollen) bleibt das Hauptverb im Stamm, und das Modalverb steht danach.</p>
+  ${ex('Ich habe das Geheimnis gesehen.')}
+  ${ex('Ich werde morgen in die Stadt gehen.')}
+  ${ex('Wir können den Mond sehen.')}
+  ${ex('Er sieht gerade die Sterne.')}
+  ${ex('Gib mir den Schlüssel!')}
+
+  <h3>7. Satzbau, Fragen und Verneinung</h3>
+  <p>Das Verb steht immer am Ende des Satzes. Die Fälle zeigen, wer was tut, darum ist die Reihenfolge der übrigen Teile frei. Üblich ist: Subjekt, Umstände, Objekt, Verb. Eine Frage endet mit der Partikel <code>ve</code>. Verneint wird mit <code>zo</code> direkt vor dem Wort, das verneint wird. „Kein X“ heißt <code>zo X</code>.</p>
+  ${ex('Wo wohnt der König?')}
+  ${ex('Ich sehe das Haus nicht.')}
+  ${ex('Ich habe keine Angst.')}
+  ${ex('Ich weiß, dass er kommen wird.')}
+
+  <h3>8. Nachwörter und Zahlen</h3>
+  <p>Wörter wie „über, unter, vor, hinter, neben, ohne, für“ stehen hinter dem Nomen, das im Genitiv steht. Nach einem Zahlwort bleibt das Nomen in der Einzahl.</p>
+  ${ex('Der Drache fliegt über dem Berg.')}
+  ${ex('Ich habe zwei Katzen und einen Hund.')}
+
+  <h3>9. Was der Übersetzer nicht kann</h3>
+  <p>Der Übersetzer arbeitet mit Regeln und etwa 500 Wörtern. Das geht nicht: Relativsätze („der Mann, der …“), Passiv, trennbare und reflexive Verben, Konjunktiv und feste Redewendungen. Unbekannte Wörter bleiben unverändert und werden markiert. Namen bleiben ebenfalls stehen. Bei langen Sätzen hilft es, sie in kurze Sätze zu teilen.</p>`;
+}
+$('#p-grammatik').innerHTML = grammarHTML();
+
+/* ---- Schrift ---- */
+function schriftHTML() {
+  let g = '<div class="sylgrid"><span></span>' + GLYPH_VOW.map(v => `<span class="h">${v}</span>`).join('');
+  GLYPH_CONS.forEach(c => {
+    g += `<span class="rl">${c}</span>` + GLYPH_VOW.map(v => `<span class="sylcell" title="${c + v}">${glyph(c + v)}<span>${c + v}</span></span>`).join('');
+  });
+  g += '<span class="rl">–</span>' + GLYPH_VOW.map(v => `<span class="sylcell" title="${v}">${glyph(v)}<span>${v}</span></span>`).join('') + '</div>';
+  return `
+  <h2>Schrift</h2>
+  <p>Die Schrift ist eine Silbenschrift mit 70 Zeichen. Jedes Zeichen steht für eine Silbe. Man schreibt von links nach rechts und hängt die Zeichen eines Wortes an eine gemeinsame Linie, die Kopflinie. Zwischen den Wörtern bleibt eine Lücke, und die Linie reißt ab.</p>
+  <h3>So liest man ein Zeichen</h3>
+  <p>Unter der Kopflinie hängt der Körper des Zeichens, er zeigt den Konsonanten. Der Vokal steht als kleines Zusatzzeichen dabei. Kein Zusatz bedeutet <i>a</i>.</p>
+  <div class="legend">
+    <div>${glyph('ta')}kein Zusatz: a</div><div>${glyph('te')}zwei Striche oben: e</div><div>${glyph('ti')}Strich rechts: i</div><div>${glyph('to')}Ring oben: o</div><div>${glyph('tu')}Schale unten: u</div>
+  </div>
+  <p class="muted">Die Beispiele zeigen den Konsonanten <i>t</i> mit allen fünf Vokalen. Ein reiner Vokal hat als Körper nur eine offene Schale unter der Kopflinie.</p>
+  <h3>Alle 70 Zeichen</h3>
+  ${g}
+  <h3>Satzzeichen</h3>
+  <p>Ein Punkt ist ein kleiner Kreis, ein Komma ein kurzer senkrechter Strich, das Fragezeichen zwei Punkte übereinander und das Ausrufezeichen ein Strich mit Punkt darunter.</p>
+  <div class="script" style="gap:18px">${scriptHTML([{w:'.',k:'p'},{w:',',k:'p'},{w:'?',k:'p'},{w:'!',k:'p'}])}</div>`;
+}
+$('#p-schrift').innerHTML = schriftHTML();
+
+/* ---- Reiter ---- */
+const TABS = ['uebersetzer', 'woerterbuch', 'grammatik', 'schrift'];
+function showTab() {
+  const t = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'uebersetzer';
+  TABS.forEach(n => { $('#p-' + n).hidden = n !== t; });
+  document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+}
+window.addEventListener('hashchange', showTab);
+showTab();
+setDir('de2sa');
+renderDict();
+})();
+</script>
+</body>
+</html>

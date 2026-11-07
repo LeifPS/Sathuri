@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sathuri Übersetzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Uncial+Antiqua&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Nachthimmel-Manuskript: tiefes Indigo, Runen in Bernstein. Layout: eine Spalte, Zeichen im Mittelpunkt. */
+  --ink: #14122b;
+  --ink-2: #1c1a3f;
+  --ink-3: #272453;
+  --line: #3b3777;
+  --text: #ece9f8;
+  --muted: #a8a4cf;
+  --rune: #f0b45a;
+  --rune-dim: #b98c4a;
+  --warn: #ff9f8c;
+  --display: "Uncial Antiqua", "Palatino Linotype", Georgia, serif;
+  --body: "Alegreya Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--text); }
+body { font-family: var(--body); font-size: 18px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+button, input, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 56px; }
+
+/* Kopf */
+header { padding: 28px 0 8px; text-align: center; }
+.hero-glyphs { display: flex; justify-content: center; gap: 0; color: var(--rune); filter: drop-shadow(0 0 10px rgba(240,180,90,.35)); }
+.hero-glyphs .gl { --h: 96px; --sw: 1.35; }
+h1 { font-family: var(--display); font-weight: 400; font-size: 42px; letter-spacing: .04em; margin: 10px 0 2px; color: var(--text); }
+.sub { margin: 0; color: var(--muted); font-size: 17px; text-wrap: balance; }
+
+/* Reiter */
+nav.tabs { display: flex; gap: 4px; margin: 22px -16px 18px; padding: 0 16px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+nav.tabs::-webkit-scrollbar { display: none; }
+nav.tabs a { flex: 0 0 auto; padding: 10px 14px 11px; color: var(--muted); text-decoration: none; font-weight: 500; letter-spacing: .02em; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+nav.tabs a[aria-current="page"] { color: var(--rune); border-bottom-color: var(--rune); }
+nav.tabs a:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--rune); outline-offset: 2px; border-radius: 6px; }
+section.panel[hidden] { display: none; }
+h2 { font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--rune); margin: 0 0 10px; font-weight: 700; }
+h3 { font-size: 20px; margin: 26px 0 6px; font-weight: 700; color: var(--text); text-wrap: balance; }
+p { margin: 0 0 12px; max-width: 65ch; }
+.muted { color: var(--muted); }
+code, .sat { font-family: var(--body); font-style: italic; color: var(--rune); font-weight: 500; }
+
+/* Übersetzer */
+.dirbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.dirlabel { font-weight: 700; font-size: 19px; flex: 1; text-align: center; }
+.iconbtn { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--ink-2); display: grid; place-items: center; cursor: pointer; color: var(--rune); }
+.iconbtn:hover { background: var(--ink-3); }
+textarea#in { width: 100%; min-height: 112px; resize: vertical; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); font-size: 20px; line-height: 1.4; }
+textarea#in::placeholder { color: #7f7ba8; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 6px 12px; font-size: 16px; cursor: pointer; text-align: left; }
+.chip:hover { color: var(--text); border-color: var(--rune-dim); }
+.chip[aria-pressed="true"] { background: var(--rune); color: #231a07; border-color: var(--rune); font-weight: 700; }
+details.kbd { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--ink-2); }
+details.kbd summary { cursor: pointer; padding: 11px 14px; font-weight: 500; color: var(--rune); }
+.keys { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 10px 12px; }
+.key { border: 1px solid var(--line); background: var(--ink); border-radius: 10px; padding: 6px 2px 4px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--rune); }
+.key:hover { background: var(--ink-3); }
+.key .gl { --h: 52px; --sw: 1.5; }
+.key span { font-size: 14px; color: var(--muted); }
+.keyrow { display: flex; gap: 8px; padding: 0 10px 12px; flex-wrap: wrap; }
+.keyrow .chip { color: var(--text); }
+.card { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--ink-2); padding: 16px; }
+.card h2 { margin-bottom: 8px; }
+.big { font-size: 26px; line-height: 1.35; margin: 0 0 6px; max-width: none; overflow-wrap: anywhere; }
+.big.sat-out { color: var(--rune); font-style: italic; font-weight: 500; }
+.rowhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.copy { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 15px; }
+.copy:hover { border-color: var(--rune-dim); }
+.hr { height: 1px; background: var(--line); margin: 16px 0; border: 0; }
+
+/* Schrift im Text */
+.script { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 26px; color: var(--rune); padding: 6px 0; }
+.script .wd { display: inline-flex; gap: 0; align-items: flex-start; }
+.script .wd.lat { font-style: italic; color: var(--warn); font-size: 18px; }
+.script .gl { --h: 62px; --sw: 1.5; }
+.pn { display: inline-block; position: relative; width: 16px; height: 62px; }
+.pn::before, .pn::after { content: ""; position: absolute; left: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--rune); }
+.pn-dot::before { top: 34px; } .pn-dot::after { display: none; }
+.pn-comma::before { top: 28px; width: 3px; height: 22px; border-radius: 2px; left: 6px; } .pn-comma::after { display: none; }
+.pn-q::before { top: 24px; } .pn-q::after { top: 40px; }
+.pn-ex::before { top: 18px; width: 3px; height: 20px; border-radius: 2px; left: 6px; } .pn-ex::after { top: 44px; }
+.gl { display: block; height: var(--h, 48px); width: calc(var(--h, 48px) * 72 / 118); fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Wort für Wort */
+.gloss { display: flex; flex-wrap: wrap; gap: 8px 6px; }
+.cell { display: flex; flex-direction: column; align-items: flex-start; padding: 6px 10px; border-radius: 10px; background: var(--ink); border: 1px solid var(--line); min-width: 0; }
+.cell .s { font-style: italic; color: var(--rune); font-weight: 500; font-size: 18px; }
+.cell .d { font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+.cell.unk { border-style: dashed; border-color: var(--warn); }
+.cell.unk .s, .cell.unk .d { color: var(--warn); }
+.cell.pn-cell { display: none; }
+.notes { margin-top: 12px; font-size: 16px; color: var(--muted); }
+.notes p { margin: 4px 0; }
+.notes .w { color: var(--warn); }
+.empty { color: var(--muted); }
+.live { position: absolute; left: -9999px; }
+
+/* Wörterbuch */
+.search { display: flex; gap: 8px; }
+.search input { flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-2); font-size: 19px; min-width: 0; }
+.count { color: var(--muted); font-size: 15px; margin: 10px 0 6px; }
+.dict details { border-bottom: 1px solid var(--line); }
+.dict summary { list-style: none; display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 10px; align-items: baseline; padding: 11px 2px; cursor: pointer; }
+.dict summary::-webkit-details-marker { display: none; }
+.dict .c { font-style: italic; color: var(--rune); font-weight: 500; font-size: 20px; overflow-wrap: anywhere; }
+.dict .g { overflow-wrap: anywhere; }
+.dict .p { font-size: 13px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.dict .body { padding: 2px 2px 16px; }
+.dict .body .info { color: var(--muted); margin: 0 0 8px; font-size: 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; }
+td.s { color: var(--rune); font-style: italic; font-weight: 500; }
+.tablewrap { overflow-x: auto; margin: 8px 0 14px; }
+
+/* Grammatik */
+.ex { margin: 10px 0 14px; padding: 10px 14px; border-left: 3px solid var(--rune-dim); background: var(--ink-2); border-radius: 0 10px 10px 0; }
+.ex .de { color: var(--muted); font-size: 16px; }
+.ex .sa { color: var(--rune); font-style: italic; font-weight: 500; font-size: 21px; overflow-wrap: anywhere; }
+.ex .gl2 { color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+.rule { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 8px 0 14px; }
+.rule b { color: var(--rune); font-style: italic; font-weight: 500; }
+
+/* Schrift */
+.sylgrid { display: grid; grid-template-columns: 44px repeat(5, 1fr); gap: 6px; align-items: center; margin: 12px 0; }
+.sylgrid .h { color: var(--muted); text-align: center; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+.sylgrid .rl { color: var(--muted); font-size: 18px; text-align: right; padding-right: 6px; font-style: italic; }
+.sylcell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; border-radius: 10px; color: var(--rune); }
+.sylcell .gl { --h: 64px; --sw: 1.6; }
+.sylcell span { font-size: 14px; color: var(--muted); }
+.legend { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0; text-align: center; font-size: 14px; color: var(--muted); }
+.legend .gl { --h: 64px; margin: 0 auto 2px; color: var(--rune); --sw: 1.6; }
+
+@media (min-width: 640px) {
+  body { font-size: 19px; }
+  h1 { font-size: 54px; }
+  .hero-glyphs .gl { --h: 120px; }
+  .script .gl { --h: 74px; }
+  .keys { grid-template-columns: repeat(10, 1fr); }
+}
+@media (max-width: 420px) {
+  .dict summary { grid-template-columns: 1fr 1fr; }
+  .dict .p { grid-column: 1 / -1; }
+  .keys { grid-template-columns: repeat(5, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card { animation: rise .35s ease-out both; }
+  @keyframes rise { from { opacity: .0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<svg id="sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs></defs></svg>
+<div class="wrap">
+  <header>
+    <div class="hero-glyphs" id="hero" role="img" aria-label="Sathuri in eigener Schrift"></div>
+    <h1>Sathuri</h1>
+    <p class="sub">Die Sprache der Mysteriösen aus dem Sanktum Magus</p>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <a href="#uebersetzer" data-tab="uebersetzer">Übersetzer</a>
+    <a href="#woerterbuch" data-tab="woerterbuch">Wörterbuch</a>
+    <a href="#grammatik" data-tab="grammatik">Grammatik</a>
+    <a href="#schrift" data-tab="schrift">Schrift</a>
+  </nav>
+
+  <!-- Übersetzer -->
+  <section class="panel" id="p-uebersetzer">
+    <div class="dirbar">
+      <div class="dirlabel" id="dirlabel">Deutsch → Sathuri</div>
+      <button class="iconbtn" id="swap" type="button" aria-label="Richtung wechseln" title="Richtung wechseln">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>
+      </button>
+    </div>
+    <label for="in" class="live">Eingabe</label>
+    <textarea id="in" rows="3" spellcheck="false" autocapitalize="sentences" placeholder="Schreibe einen Satz …"></textarea>
+    <div class="chips" id="examples" aria-label="Beispiele"></div>
+    <details class="kbd" id="kbd" hidden>
+      <summary>Zeichen-Tastatur</summary>
+      <div class="keys" id="keys"></div>
+      <div class="keyrow">
+        <button class="chip" type="button" data-act="space">Leerzeichen</button>
+        <button class="chip" type="button" data-act="back">Löschen</button>
+        <button class="chip" type="button" data-ins=".">.</button>
+        <button class="chip" type="button" data-ins=",">,</button>
+        <button class="chip" type="button" data-ins="?">?</button>
+        <button class="chip" type="button" data-ins="!">!</button>
+      </div>
+    </details>
+    <div id="out" aria-live="polite"></div>
+  </section>
+
+  <!-- Wörterbuch -->
+  <section class="panel" id="p-woerterbuch" hidden>
+    <div class="search">
+      <label for="q" class="live">Suche</label>
+      <input id="q" type="search" placeholder="Deutsch oder Sathuri suchen …" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="chips" id="filters"></div>
+    <div class="count" id="count"></div>
+    <div class="dict" id="dict"></div>
+  </section>
+
+  <!-- Grammatik -->
+  <section class="panel" id="p-grammatik" hidden></section>
+
+  <!-- Schrift -->
+  <section class="panel" id="p-schrift" hidden></section>
+</div>
+
+<script>
+const LEX = {"nouns":[{"c":"mashora","s":"Magie","p":"Magien","g":"f"},{"c":"zavuro","s":"Zauber","p":"Zauber","g":"m"},{"c":"zavurosha","s":"Zauberer","p":"Zauberer","g":"m"},{"c":"lurasho","s":"Zauberstab","p":"Zauberstäbe","g":"m"},{"c":"mithara","s":"Geheimnis","p":"Geheimnisse","g":"n"},{"c":"satumo","s":"Rätsel","p":"Rätsel","g":"n"},{"c":"sathuma","s":"Sanktum","p":"Sankta","g":"n"},{"c":"thataro","s":"Heiligtum","p":"Heiligtümer","g":"n"},{"c":"lirizo","s":"Tempel","p":"Tempel","g":"m"},{"c":"loka","s":"Turm","p":"Türme","g":"m"},{"c":"rivura","s":"Buch","p":"Bücher","g":"n"},{"c":"mulotha","s":"Schriftrolle","p":"Schriftrollen","g":"f"},{"c":"thama","s":"Kristall","p":"Kristalle","g":"m"},{"c":"telo","s":"Amulett","p":"Amulette","g":"n"},{"c":"shazo","s":"Ring","p":"Ringe","g":"m"},{"c":"thinizo","s":"Schlüssel","p":"Schlüssel","g":"m"},{"c":"kazo","s":"Tür","p":"Türen","g":"f"},{"c":"tetha","s":"Tor","p":"Tore","g":"n"},{"c":"mathira","s":"Siegel","p":"Siegel","g":"n"},{"c":"ruzana","s":"Rune","p":"Runen","g":"f"},{"c":"ruzano","s":"Zeichen","p":"Zeichen","g":"n"},{"c":"dunara","s":"Schatten","p":"Schatten","g":"m"},{"c":"shira","s":"Licht","p":"Lichter","g":"n"},{"c":"ithaho","s":"Finsternis","p":"Finsternisse","g":"f"},{"c":"etha","s":"Nebel","p":"Nebel","g":"m"},{"c":"morela","s":"Traum","p":"Träume","g":"m"},{"c":"aruna","s":"Geist","p":"Geister","g":"m"},{"c":"elara","s":"Seele","p":"Seelen","g":"f"},{"c":"nethira","s":"Schicksal","p":"Schicksale","g":"n"},{"c":"thalima","s":"Weisheit","p":"Weisheiten","g":"f"},{"c":"vehira","s":"Wahrheit","p":"Wahrheiten","g":"f"},{"c":"zora","s":"Lüge","p":"Lügen","g":"f"},{"c":"dano","s":"Macht","p":"Mächte","g":"f"},{"c":"viro","s":"Kraft","p":"Kräfte","g":"f"},{"c":"resa","s":"Flamme","p":"Flammen","g":"f"},{"c":"orasho","s":"Orakel","p":"Orakel","g":"n"},{"c":"thihaza","s":"Prophezeiung","p":"Prophezeiungen","g":"f"},{"c":"remisho","s":"Fluch","p":"Flüche","g":"m"},{"c":"navo","s":"Segen","p":"Segen","g":"m"},{"c":"rasha","s":"Wunder","p":"Wunder","g":"n"},{"c":"seva","s":"Hexe","p":"Hexen","g":"f"},{"c":"dashuro","s":"Drache","p":"Drachen","g":"m","w":1},{"c":"solita","s":"Wächter","p":"Wächter","g":"m"},{"c":"sida","s":"Meister","p":"Meister","g":"m"},{"c":"dotha","s":"Schüler","p":"Schüler","g":"m"},{"c":"medo","s":"Lehrer","p":"Lehrer","g":"m"},{"c":"neho","s":"Gast","p":"Gäste","g":"m"},{"c":"kutho","s":"Freund","p":"Freunde","g":"m"},{"c":"nazo","s":"Feind","p":"Feinde","g":"m"},{"c":"dathasha","s":"König","p":"Könige","g":"m"},{"c":"kamutha","s":"Königin","p":"Königinnen","g":"f"},{"c":"zedako","s":"Mann","p":"Männer","g":"m"},{"c":"vusho","s":"Frau","p":"Frauen","g":"f"},{"c":"nezo","s":"Kind","p":"Kinder","g":"n"},{"c":"asa","s":"Mädchen","p":"Mädchen","g":"n"},{"c":"shusa","s":"Junge","p":"Jungen","g":"m","w":1},{"c":"tora","s":"Held","p":"Helden","g":"m","w":1},{"c":"hanila","s":"Mensch","p":"Menschen","g":"m","w":1},{"c":"reta","s":"Gott","p":"Götter","g":"m"},{"c":"thora","s":"Göttin","p":"Göttinnen","g":"f"},{"c":"votha","s":"Wesen","p":"Wesen","g":"n"},{"c":"eva","s":"Gespenst","p":"Gespenster","g":"n"},{"c":"vedo","s":"Tier","p":"Tiere","g":"n"},{"c":"katha","s":"Hund","p":"Hunde","g":"m"},{"c":"doshatha","s":"Katze","p":"Katzen","g":"f"},{"c":"theshino","s":"Vogel","p":"Vögel","g":"m"},{"c":"lukutho","s":"Fisch","p":"Fische","g":"m"},{"c":"tiza","s":"Pferd","p":"Pferde","g":"n"},{"c":"anuva","s":"Wolf","p":"Wölfe","g":"m"},{"c":"tholo","s":"Fuchs","p":"Füchse","g":"m"},{"c":"shilosho","s":"Bär","p":"Bären","g":"m","w":1},{"c":"mena","s":"Schlange","p":"Schlangen","g":"f"},{"c":"shivo","s":"Eule","p":"Eulen","g":"f"},{"c":"vutha","s":"Rabe","p":"Raben","g":"m","w":1},{"c":"tonela","s":"Tonling","p":"Tonlinge","g":"m"},{"c":"sheno","s":"Kopf","p":"Köpfe","g":"m"},{"c":"redura","s":"Auge","p":"Augen","g":"n"},{"c":"nozo","s":"Ohr","p":"Ohren","g":"n"},{"c":"hesako","s":"Mund","p":"Münder","g":"m"},{"c":"nara","s":"Hand","p":"Hände","g":"f"},{"c":"zara","s":"Herz","p":"Herzen","g":"n","gen":"Herzens"},{"c":"rashito","s":"Fuß","p":"Füße","g":"m"},{"c":"siva","s":"Arm","p":"Arme","g":"m"},{"c":"thavera","s":"Gesicht","p":"Gesichter","g":"n"},{"c":"netha","s":"Stimme","p":"Stimmen","g":"f"},{"c":"thalizo","s":"Name","p":"Namen","g":"m","gen":"Namens"},{"c":"athulo","s":"Blut","p":"Blut","g":"n"},{"c":"sono","s":"Himmel","p":"Himmel","g":"m"},{"c":"niso","s":"Sonne","p":"Sonnen","g":"f"},{"c":"velitho","s":"Mond","p":"Monde","g":"m"},{"c":"ethara","s":"Stern","p":"Sterne","g":"m"},{"c":"nuvo","s":"Nacht","p":"Nächte","g":"f"},{"c":"shazama","s":"Tag","p":"Tage","g":"m"},{"c":"keno","s":"Zeit","p":"Zeiten","g":"f"},{"c":"sholo","s":"Stunde","p":"Stunden","g":"f"},{"c":"nako","s":"Jahr","p":"Jahre","g":"n"},{"c":"lamatha","s":"Welt","p":"Welten","g":"f"},{"c":"zitha","s":"Reich","p":"Reiche","g":"n"},{"c":"shara","s":"Land","p":"Länder","g":"n"},{"c":"dizava","s":"Berg","p":"Berge","g":"m"},{"c":"remo","s":"Tal","p":"Täler","g":"n"},{"c":"thavusho","s":"Wald","p":"Wälder","g":"m"},{"c":"movoma","s":"Baum","p":"Bäume","g":"m"},{"c":"hemo","s":"Blume","p":"Blumen","g":"f"},{"c":"hino","s":"Blatt","p":"Blätter","g":"n"},{"c":"rata","s":"Stein","p":"Steine","g":"m"},{"c":"tharido","s":"Fluss","p":"Flüsse","g":"m"},{"c":"lata","s":"See","p":"Seen","g":"m"},{"c":"reshotha","s":"Meer","p":"Meere","g":"n"},{"c":"tutha","s":"Insel","p":"Inseln","g":"f"},{"c":"hanutho","s":"Höhle","p":"Höhlen","g":"f"},{"c":"vino","s":"Weg","p":"Wege","g":"m"},{"c":"isho","s":"Pfad","p":"Pfade","g":"m"},{"c":"luza","s":"Brücke","p":"Brücken","g":"f"},{"c":"kimo","s":"Stadt","p":"Städte","g":"f"},{"c":"mutho","s":"Dorf","p":"Dörfer","g":"n"},{"c":"ranuko","s":"Haus","p":"Häuser","g":"n"},{"c":"shedola","s":"Zimmer","p":"Zimmer","g":"n"},{"c":"vithano","s":"Garten","p":"Gärten","g":"m"},{"c":"sinuvo","s":"Feld","p":"Felder","g":"n"},{"c":"thiruza","s":"Straße","p":"Straßen","g":"f"},{"c":"zulasa","s":"Feuer","p":"Feuer","g":"n"},{"c":"era","s":"Wasser","p":"Wasser","g":"n"},{"c":"zedala","s":"Erde","p":"Erden","g":"f"},{"c":"vosuko","s":"Luft","p":"Lüfte","g":"f"},{"c":"thada","s":"Wind","p":"Winde","g":"m"},{"c":"zuteza","s":"Eis","p":"Eis","g":"n"},{"c":"deha","s":"Blitz","p":"Blitze","g":"m"},{"c":"zinilo","s":"Donner","p":"Donner","g":"m"},{"c":"suto","s":"Regen","p":"Regen","g":"m"},{"c":"tususha","s":"Schnee","p":"Schnee","g":"m"},{"c":"mishita","s":"Wolke","p":"Wolken","g":"f"},{"c":"rulazo","s":"Brot","p":"Brote","g":"n"},{"c":"tizuma","s":"Apfel","p":"Äpfel","g":"m"},{"c":"sizosho","s":"Milch","p":"Milch","g":"f"},{"c":"izeda","s":"Essen","p":"Essen","g":"n"},{"c":"zivutho","s":"Tee","p":"Tees","g":"m"},{"c":"thina","s":"Salz","p":"Salze","g":"n"},{"c":"serava","s":"Gold","p":"Gold","g":"n"},{"c":"shatho","s":"Silber","p":"Silber","g":"n"},{"c":"tido","s":"Eisen","p":"Eisen","g":"n"},{"c":"thasha","s":"Schwert","p":"Schwerter","g":"n"},{"c":"zehetho","s":"Schild","p":"Schilde","g":"m"},{"c":"misho","s":"Pfeil","p":"Pfeile","g":"m"},{"c":"roka","s":"Bogen","p":"Bögen","g":"m"},{"c":"mavasho","s":"Waffe","p":"Waffen","g":"f"},{"c":"zero","s":"Feder","p":"Federn","g":"f"},{"c":"dothosa","s":"Papier","p":"Papiere","g":"n"},{"c":"helo","s":"Tinte","p":"Tinten","g":"f"},{"c":"seda","s":"Kerze","p":"Kerzen","g":"f"},{"c":"shemisa","s":"Lampe","p":"Lampen","g":"f"},{"c":"zuko","s":"Spiegel","p":"Spiegel","g":"m"},{"c":"duhilo","s":"Glas","p":"Gläser","g":"n"},{"c":"lano","s":"Lied","p":"Lieder","g":"n"},{"c":"ratona","s":"Musik","p":"Musik","g":"f"},{"c":"tonaro","s":"Klang","p":"Klänge","g":"m"},{"c":"tona","s":"Ton","p":"Töne","g":"m"},{"c":"letha","s":"Flöte","p":"Flöten","g":"f"},{"c":"dithaha","s":"Trommel","p":"Trommeln","g":"f"},{"c":"kimida","s":"Harfe","p":"Harfen","g":"f"},{"c":"muna","s":"Glocke","p":"Glocken","g":"f"},{"c":"melasa","s":"Spiel","p":"Spiele","g":"n"},{"c":"tesha","s":"Geschenk","p":"Geschenke","g":"n"},{"c":"doza","s":"Geld","p":"Gelder","g":"n"},{"c":"shidela","s":"Schatz","p":"Schätze","g":"m"},{"c":"vado","s":"Karte","p":"Karten","g":"f"},{"c":"dimo","s":"Brief","p":"Briefe","g":"m"},{"c":"dethulo","s":"Wort","p":"Wörter","g":"n"},{"c":"rakalo","s":"Sprache","p":"Sprachen","g":"f"},{"c":"naluma","s":"Nachricht","p":"Nachrichten","g":"f"},{"c":"zikona","s":"Frage","p":"Fragen","g":"f"},{"c":"noto","s":"Antwort","p":"Antworten","g":"f"},{"c":"desida","s":"Idee","p":"Ideen","g":"f"},{"c":"silo","s":"Gedanke","p":"Gedanken","g":"m","w":1,"gen":"Gedankens"},{"c":"taso","s":"Erinnerung","p":"Erinnerungen","g":"f"},{"c":"shelomo","s":"Hoffnung","p":"Hoffnungen","g":"f"},{"c":"latha","s":"Angst","p":"Ängste","g":"f"},{"c":"shevo","s":"Liebe","p":"Lieben","g":"f"},{"c":"sako","s":"Freude","p":"Freuden","g":"f"},{"c":"meto","s":"Trauer","p":"Trauer","g":"f"},{"c":"rivuno","s":"Mut","p":"Mut","g":"m"},{"c":"helozo","s":"Frieden","p":"Frieden","g":"m"},{"c":"dovuta","s":"Krieg","p":"Kriege","g":"m"},{"c":"rolo","s":"Leben","p":"Leben","g":"n"},{"c":"maso","s":"Tod","p":"Tode","g":"m"},{"c":"lamo","s":"Glück","p":"Glück","g":"n"},{"c":"zevo","s":"Hilfe","p":"Hilfen","g":"f"},{"c":"suvoro","s":"Gefahr","p":"Gefahren","g":"f"},{"c":"rokana","s":"Reise","p":"Reisen","g":"f"},{"c":"tama","s":"Ziel","p":"Ziele","g":"n"},{"c":"iditho","s":"Anfang","p":"Anfänge","g":"m"},{"c":"thana","s":"Ende","p":"Enden","g":"n"},{"c":"shidaka","s":"Ort","p":"Orte","g":"m"},{"c":"iva","s":"Ding","p":"Dinge","g":"n"},{"c":"mesha","s":"Teil","p":"Teile","g":"m"},{"c":"thuka","s":"Mitte","p":"Mitten","g":"f"},{"c":"shisutha","s":"Grenze","p":"Grenzen","g":"f"},{"c":"datha","s":"Abend","p":"Abende","g":"m"},{"c":"kotha","s":"Frühling","p":"Frühlinge","g":"m"},{"c":"thenotha","s":"Sommer","p":"Sommer","g":"m"},{"c":"kihato","s":"Herbst","p":"Herbste","g":"m"},{"c":"loro","s":"Winter","p":"Winter","g":"m"},{"c":"kalo","s":"Farbe","p":"Farben","g":"f"},{"c":"huvo","s":"Hut","p":"Hüte","g":"m"},{"c":"tanisa","s":"Hobby","p":"Hobbys","g":"n"}],"verbs":[{"c":"esu","inf":"sein","du":"","er":"","pret":"","part":"","fl":""},{"c":"ramu","inf":"haben","du":"","er":"","pret":"","part":"","fl":""},{"c":"lahashu","inf":"werden","du":"","er":"","pret":"","part":"","fl":""},{"c":"doku","inf":"können","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"lekesu","inf":"müssen","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"tohu","inf":"wollen","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"runu","inf":"dürfen","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"ithu","inf":"sollen","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"rishu","inf":"mögen","du":"","er":"","pret":"","part":"","fl":"x"},{"c":"zathu","inf":"wissen","du":"","er":"","pret":"","part":"","fl":""},{"c":"kelu","inf":"gehen","du":"","er":"","pret":"ging","part":"gegangen","fl":"m"},{"c":"numu","inf":"kommen","du":"","er":"","pret":"kam","part":"gekommen","fl":"m"},{"c":"vesu","inf":"sehen","du":"siehst","er":"sieht","pret":"sah","part":"gesehen","fl":""},{"c":"ditharu","inf":"hören","du":"","er":"","pret":"hörte","part":"gehört","fl":""},{"c":"rahu","inf":"sprechen","du":"sprichst","er":"spricht","pret":"sprach","part":"gesprochen","fl":""},{"c":"thuhusu","inf":"sagen","du":"","er":"","pret":"sagte","part":"gesagt","fl":""},{"c":"thikenu","inf":"fragen","du":"","er":"","pret":"fragte","part":"gefragt","fl":""},{"c":"lorinu","inf":"antworten","du":"","er":"","pret":"antwortete","part":"geantwortet","fl":"d"},{"c":"mavu","inf":"kennen","du":"","er":"","pret":"kannte","part":"gekannt","fl":""},{"c":"valuzu","inf":"denken","du":"","er":"","pret":"dachte","part":"gedacht","fl":""},{"c":"kaduku","inf":"glauben","du":"","er":"","pret":"glaubte","part":"geglaubt","fl":""},{"c":"rathu","inf":"finden","du":"","er":"","pret":"fand","part":"gefunden","fl":""},{"c":"tolu","inf":"suchen","du":"","er":"","pret":"suchte","part":"gesucht","fl":""},{"c":"teru","inf":"geben","du":"gibst","er":"gibt","pret":"gab","part":"gegeben","fl":"t"},{"c":"moru","inf":"nehmen","du":"nimmst","er":"nimmt","pret":"nahm","part":"genommen","fl":""},{"c":"zethetu","inf":"machen","du":"","er":"","pret":"machte","part":"gemacht","fl":""},{"c":"vithu","inf":"tun","du":"","er":"","pret":"tat","part":"getan","fl":""},{"c":"nathu","inf":"bringen","du":"","er":"","pret":"brachte","part":"gebracht","fl":"mt"},{"c":"shithu","inf":"halten","du":"hältst","er":"hält","pret":"hielt","part":"gehalten","fl":""},{"c":"dehavu","inf":"stehen","du":"","er":"","pret":"stand","part":"gestanden","fl":""},{"c":"ladamu","inf":"sitzen","du":"","er":"","pret":"saß","part":"gesessen","fl":""},{"c":"midu","inf":"liegen","du":"","er":"","pret":"lag","part":"gelegen","fl":""},{"c":"suthutu","inf":"laufen","du":"läufst","er":"läuft","pret":"lief","part":"gelaufen","fl":"m"},{"c":"motu","inf":"fliegen","du":"","er":"","pret":"flog","part":"geflogen","fl":"m"},{"c":"thotu","inf":"schwimmen","du":"","er":"","pret":"schwamm","part":"geschwommen","fl":"m"},{"c":"vutanu","inf":"fahren","du":"fährst","er":"fährt","pret":"fuhr","part":"gefahren","fl":"m"},{"c":"lovu","inf":"leben","du":"","er":"","pret":"lebte","part":"gelebt","fl":""},{"c":"sutenu","inf":"wohnen","du":"","er":"","pret":"wohnte","part":"gewohnt","fl":""},{"c":"lesu","inf":"sterben","du":"stirbst","er":"stirbt","pret":"starb","part":"gestorben","fl":""},{"c":"kamu","inf":"lieben","du":"","er":"","pret":"liebte","part":"geliebt","fl":""},{"c":"shathasu","inf":"hassen","du":"","er":"","pret":"hasste","part":"gehasst","fl":""},{"c":"vazu","inf":"helfen","du":"hilfst","er":"hilft","pret":"half","part":"geholfen","fl":"d"},{"c":"saru","inf":"rufen","du":"","er":"","pret":"rief","part":"gerufen","fl":""},{"c":"nothiku","inf":"singen","du":"","er":"","pret":"sang","part":"gesungen","fl":""},{"c":"zathashu","inf":"spielen","du":"","er":"","pret":"spielte","part":"gespielt","fl":""},{"c":"nemu","inf":"tanzen","du":"","er":"","pret":"tanzte","part":"getanzt","fl":""},{"c":"tatheru","inf":"lachen","du":"","er":"","pret":"lachte","part":"gelacht","fl":""},{"c":"nolu","inf":"weinen","du":"","er":"","pret":"weinte","part":"geweint","fl":""},{"c":"oku","inf":"schlafen","du":"schläfst","er":"schläft","pret":"schlief","part":"geschlafen","fl":""},{"c":"morelu","inf":"träumen","du":"","er":"","pret":"träumte","part":"geträumt","fl":""},{"c":"himu","inf":"essen","du":"isst","er":"isst","pret":"aß","part":"gegessen","fl":""},{"c":"volu","inf":"trinken","du":"","er":"","pret":"trank","part":"getrunken","fl":""},{"c":"ritu","inf":"öffnen","du":"","er":"","pret":"öffnete","part":"geöffnet","fl":""},{"c":"lishu","inf":"schließen","du":"","er":"","pret":"schloss","part":"geschlossen","fl":""},{"c":"thoku","inf":"bauen","du":"","er":"","pret":"baute","part":"gebaut","fl":""},{"c":"musu","inf":"zerstören","du":"","er":"","pret":"zerstörte","part":"zerstört","fl":""},{"c":"duru","inf":"beschützen","du":"","er":"","pret":"beschützte","part":"beschützt","fl":""},{"c":"maru","inf":"kämpfen","du":"","er":"","pret":"kämpfte","part":"gekämpft","fl":""},{"c":"savu","inf":"verlieren","du":"","er":"","pret":"verlor","part":"verloren","fl":""},{"c":"oshiru","inf":"gewinnen","du":"","er":"","pret":"gewann","part":"gewonnen","fl":""},{"c":"roduthu","inf":"lernen","du":"","er":"","pret":"lernte","part":"gelernt","fl":""},{"c":"kithu","inf":"lehren","du":"","er":"","pret":"lehrte","part":"gelehrt","fl":""},{"c":"sunu","inf":"lesen","du":"liest","er":"liest","pret":"las","part":"gelesen","fl":""},{"c":"homu","inf":"schreiben","du":"","er":"","pret":"schrieb","part":"geschrieben","fl":""},{"c":"thiru","inf":"zeichnen","du":"","er":"","pret":"zeichnete","part":"gezeichnet","fl":""},{"c":"ledu","inf":"warten","du":"","er":"","pret":"wartete","part":"gewartet","fl":""},{"c":"hisu","inf":"bleiben","du":"","er":"","pret":"blieb","part":"geblieben","fl":""},{"c":"kisu","inf":"fallen","du":"fällst","er":"fällt","pret":"fiel","part":"gefallen","fl":""},{"c":"divu","inf":"steigen","du":"","er":"","pret":"stieg","part":"gestiegen","fl":"m"},{"c":"ruhu","inf":"vergessen","du":"vergisst","er":"vergisst","pret":"vergaß","part":"vergessen","fl":""},{"c":"daru","inf":"verstehen","du":"","er":"","pret":"verstand","part":"verstanden","fl":""},{"c":"avu","inf":"zeigen","du":"","er":"","pret":"zeigte","part":"gezeigt","fl":"t"},{"c":"zemiru","inf":"verbergen","du":"verbirgst","er":"verbirgt","pret":"verbarg","part":"verborgen","fl":""},{"c":"shiru","inf":"leuchten","du":"","er":"","pret":"leuchtete","part":"geleuchtet","fl":""},{"c":"shimu","inf":"brennen","du":"","er":"","pret":"brannte","part":"gebrannt","fl":""},{"c":"luthuru","inf":"fließen","du":"","er":"","pret":"floss","part":"geflossen","fl":""},{"c":"ushozu","inf":"wachsen","du":"wächst","er":"wächst","pret":"wuchs","part":"gewachsen","fl":""},{"c":"methu","inf":"scheinen","du":"","er":"","pret":"schien","part":"geschienen","fl":""},{"c":"thevu","inf":"heißen","du":"","er":"","pret":"hieß","part":"geheißen","fl":""},{"c":"maluthu","inf":"brauchen","du":"","er":"","pret":"brauchte","part":"gebraucht","fl":""},{"c":"risu","inf":"bitten","du":"","er":"","pret":"bat","part":"gebeten","fl":""},{"c":"kunoru","inf":"danken","du":"","er":"","pret":"dankte","part":"gedankt","fl":"d"},{"c":"lozushu","inf":"fürchten","du":"","er":"","pret":"fürchtete","part":"gefürchtet","fl":""},{"c":"meru","inf":"hoffen","du":"","er":"","pret":"hoffte","part":"gehofft","fl":""},{"c":"nishu","inf":"wählen","du":"","er":"","pret":"wählte","part":"gewählt","fl":""},{"c":"zavuru","inf":"zaubern","du":"","er":"","pret":"zauberte","part":"gezaubert","fl":""},{"c":"udu","inf":"folgen","du":"","er":"","pret":"folgte","part":"gefolgt","fl":"dm"},{"c":"ashu","inf":"führen","du":"","er":"","pret":"führte","part":"geführt","fl":""},{"c":"nithu","inf":"tragen","du":"trägst","er":"trägt","pret":"trug","part":"getragen","fl":""},{"c":"shozu","inf":"werfen","du":"wirfst","er":"wirft","pret":"warf","part":"geworfen","fl":""},{"c":"uthashu","inf":"fangen","du":"fängst","er":"fängt","pret":"fing","part":"gefangen","fl":""},{"c":"ruzu","inf":"retten","du":"","er":"","pret":"rettete","part":"gerettet","fl":""},{"c":"ravu","inf":"heilen","du":"","er":"","pret":"heilte","part":"geheilt","fl":""},{"c":"lothanu","inf":"beginnen","du":"","er":"","pret":"begann","part":"begonnen","fl":""},{"c":"lozu","inf":"enden","du":"","er":"","pret":"endete","part":"geendet","fl":""},{"c":"thezu","inf":"treffen","du":"triffst","er":"trifft","pret":"traf","part":"getroffen","fl":""},{"c":"dishuvu","inf":"schicken","du":"","er":"","pret":"schickte","part":"geschickt","fl":"t"},{"c":"salu","inf":"kaufen","du":"","er":"","pret":"kaufte","part":"gekauft","fl":""},{"c":"tithu","inf":"verkaufen","du":"","er":"","pret":"verkaufte","part":"verkauft","fl":""},{"c":"thelesu","inf":"reisen","du":"","er":"","pret":"reiste","part":"gereist","fl":"m"},{"c":"shumu","inf":"wandern","du":"","er":"","pret":"wanderte","part":"gewandert","fl":"m"}],"adjs":[{"c":"sushuthi","base":"groß","comp":"größer","sup":"größt","dst":""},{"c":"zothi","base":"klein","comp":"","sup":"","dst":""},{"c":"unali","base":"alt","comp":"älter","sup":"ältest","dst":""},{"c":"matezi","base":"jung","comp":"jünger","sup":"jüngst","dst":""},{"c":"vidiki","base":"neu","comp":"","sup":"","dst":""},{"c":"niti","base":"gut","comp":"besser","sup":"best","dst":""},{"c":"hati","base":"schlecht","comp":"","sup":"","dst":""},{"c":"mihi","base":"schön","comp":"","sup":"","dst":""},{"c":"lasi","base":"hässlich","comp":"","sup":"","dst":""},{"c":"akuli","base":"stark","comp":"stärker","sup":"stärkst","dst":""},{"c":"levi","base":"schwach","comp":"schwächer","sup":"schwächst","dst":""},{"c":"tiki","base":"schnell","comp":"","sup":"","dst":""},{"c":"rothi","base":"langsam","comp":"","sup":"","dst":""},{"c":"shiri","base":"hell","comp":"","sup":"","dst":""},{"c":"dunari","base":"dunkel","comp":"dunkler","sup":"dunkelst","dst":""},{"c":"thari","base":"heiß","comp":"","sup":"","dst":""},{"c":"shiti","base":"kalt","comp":"kälter","sup":"kältest","dst":""},{"c":"liroki","base":"warm","comp":"wärmer","sup":"wärmst","dst":""},{"c":"zokuhi","base":"kühl","comp":"","sup":"","dst":""},{"c":"vishi","base":"laut","comp":"","sup":"","dst":""},{"c":"thudi","base":"leise","comp":"","sup":"","dst":""},{"c":"keniti","base":"lang","comp":"länger","sup":"längst","dst":""},{"c":"darisi","base":"kurz","comp":"kürzer","sup":"kürzest","dst":""},{"c":"hali","base":"hoch","comp":"höher","sup":"höchst","dst":"hoh"},{"c":"tosi","base":"tief","comp":"","sup":"","dst":""},{"c":"shesi","base":"weit","comp":"","sup":"","dst":""},{"c":"melemi","base":"nah","comp":"näher","sup":"nächst","dst":""},{"c":"deshili","base":"fern","comp":"","sup":"","dst":""},{"c":"zasi","base":"voll","comp":"","sup":"","dst":""},{"c":"revi","base":"leer","comp":"","sup":"","dst":""},{"c":"lisi","base":"reich","comp":"","sup":"","dst":""},{"c":"thushi","base":"arm","comp":"ärmer","sup":"ärmst","dst":""},{"c":"rovi","base":"glücklich","comp":"","sup":"","dst":""},{"c":"tomi","base":"traurig","comp":"","sup":"","dst":""},{"c":"noshi","base":"mutig","comp":"","sup":"","dst":""},{"c":"ithori","base":"ängstlich","comp":"","sup":"","dst":""},{"c":"zemi","base":"weise","comp":"","sup":"","dst":""},{"c":"delasi","base":"dumm","comp":"dümmer","sup":"dümmst","dst":""},{"c":"luholi","base":"klug","comp":"klüger","sup":"klügst","dst":""},{"c":"themedi","base":"still","comp":"","sup":"","dst":""},{"c":"nahi","base":"wild","comp":"","sup":"","dst":""},{"c":"thiki","base":"sanft","comp":"","sup":"","dst":""},{"c":"shori","base":"hart","comp":"härter","sup":"härtest","dst":""},{"c":"koni","base":"weich","comp":"","sup":"","dst":""},{"c":"tathi","base":"scharf","comp":"schärfer","sup":"schärfst","dst":""},{"c":"thishi","base":"offen","comp":"","sup":"","dst":""},{"c":"dahi","base":"verborgen","comp":"","sup":"","dst":""},{"c":"sathuri","base":"heilig","comp":"","sup":"","dst":""},{"c":"mithari","base":"mysteriös","comp":"","sup":"","dst":""},{"c":"mashori","base":"magisch","comp":"","sup":"","dst":""},{"c":"rimushi","base":"ewig","comp":"","sup":"","dst":""},{"c":"romi","base":"fremd","comp":"","sup":"","dst":""},{"c":"mavisi","base":"bekannt","comp":"","sup":"","dst":""},{"c":"kisuvi","base":"wahr","comp":"","sup":"","dst":""},{"c":"diti","base":"falsch","comp":"","sup":"","dst":""},{"c":"zanodi","base":"frei","comp":"","sup":"","dst":""},{"c":"tadi","base":"tot","comp":"","sup":"","dst":""},{"c":"haziti","base":"lebendig","comp":"","sup":"","dst":""},{"c":"hedi","base":"müde","comp":"","sup":"","dst":""},{"c":"niredi","base":"wach","comp":"","sup":"","dst":""},{"c":"nesi","base":"rot","comp":"","sup":"","dst":""},{"c":"leti","base":"blau","comp":"","sup":"","dst":""},{"c":"karali","base":"grün","comp":"","sup":"","dst":""},{"c":"sholevi","base":"gelb","comp":"","sup":"","dst":""},{"c":"thukisi","base":"weiß","comp":"","sup":"","dst":""},{"c":"neki","base":"schwarz","comp":"","sup":"","dst":""},{"c":"shanethi","base":"golden","comp":"","sup":"","dst":""},{"c":"hami","base":"süß","comp":"","sup":"","dst":""},{"c":"zeli","base":"bitter","comp":"","sup":"","dst":""},{"c":"shili","base":"erst","comp":"","sup":"","dst":""},{"c":"zeti","base":"letzt","comp":"","sup":"","dst":""},{"c":"leri","base":"ganz","comp":"","sup":"","dst":""},{"c":"ziki","base":"richtig","comp":"","sup":"","dst":""},{"c":"nimari","base":"einfach","comp":"","sup":"","dst":""},{"c":"dazi","base":"schwer","comp":"","sup":"","dst":""},{"c":"zothoni","base":"leicht","comp":"","sup":"","dst":""},{"c":"shuli","base":"nass","comp":"","sup":"","dst":""},{"c":"dali","base":"trocken","comp":"","sup":"","dst":""},{"c":"idi","base":"rund","comp":"","sup":"","dst":""},{"c":"theni","base":"sicher","comp":"","sup":"","dst":""},{"c":"siti","base":"gefährlich","comp":"","sup":"","dst":""},{"c":"letuni","base":"wichtig","comp":"","sup":"","dst":""},{"c":"shuseni","base":"verloren","comp":"","sup":"","dst":""},{"c":"zashi","base":"gleich","comp":"","sup":"","dst":""},{"c":"hiladi","base":"ander","comp":"","sup":"","dst":""}],"inv":[{"c":"madeshe","t":"adv","f":["hier"],"o":""},{"c":"selore","t":"adv","f":["dort","da"],"o":""},{"c":"sove","t":"adv","f":["jetzt","nun"],"o":""},{"c":"nile","t":"adv","f":["heute"],"o":""},{"c":"nisute","t":"adv","f":["morgen"],"o":""},{"c":"dune","t":"adv","f":["gestern"],"o":""},{"c":"tilare","t":"adv","f":["immer"],"o":""},{"c":"sharake","t":"adv","f":["nie","niemals"],"o":""},{"c":"vahote","t":"adv","f":["oft"],"o":""},{"c":"shake","t":"adv","f":["manchmal"],"o":""},{"c":"shevume","t":"adv","f":["sehr"],"o":""},{"c":"vake","t":"adv","f":["nur"],"o":""},{"c":"roze","t":"adv","f":["auch"],"o":""},{"c":"nukeshe","t":"adv","f":["noch"],"o":""},{"c":"lothe","t":"adv","f":["schon"],"o":""},{"c":"sashe","t":"adv","f":["vielleicht"],"o":""},{"c":"nele","t":"adv","f":["zusammen"],"o":""},{"c":"zuve","t":"adv","f":["allein"],"o":""},{"c":"sere","t":"adv","f":["wieder"],"o":""},{"c":"rade","t":"adv","f":["bald"],"o":""},{"c":"lite","t":"adv","f":["gern","gerne"],"o":""},{"c":"leze","t":"adv","f":["fast"],"o":""},{"c":"kereshe","t":"adv","f":["oben"],"o":""},{"c":"lekire","t":"adv","f":["unten"],"o":""},{"c":"lide","t":"adv","f":["drinnen"],"o":""},{"c":"vite","t":"adv","f":["draußen"],"o":""},{"c":"thatame","t":"adv","f":["links"],"o":""},{"c":"tine","t":"adv","f":["rechts"],"o":""},{"c":"zahe","t":"adv","f":["überall"],"o":""},{"c":"ete","t":"adv","f":["nirgends"],"o":""},{"c":"kumode","t":"adv","f":["dann"],"o":""},{"c":"revude","t":"adv","f":["später"],"o":""},{"c":"node","t":"adv","f":["früher"],"o":""},{"c":"taze","t":"adv","f":["so"],"o":""},{"c":"veroke","t":"adv","f":["genau"],"o":""},{"c":"thaluve","t":"adv","f":["zuerst"],"o":""},{"c":"lakile","t":"adv","f":["zuletzt"],"o":""},{"c":"lisite","t":"adv","f":["viel"],"o":""},{"c":"zisune","t":"adv","f":["wenig"],"o":""},{"c":"mirime","t":"adv","f":["plötzlich"],"o":""},{"c":"vore","t":"adv","f":["leider"],"o":""},{"c":"shethe","t":"adv","f":["wirklich"],"o":""},{"c":"odese","t":"adv","f":["hoffentlich"],"o":""},{"c":"kide","t":"adv","f":["vorwärts"],"o":""},{"c":"ile","t":"adv","f":["zurück"],"o":""},{"c":"ke","t":"conj","f":["und"],"o":""},{"c":"se","t":"conj","f":["oder"],"o":""},{"c":"the","t":"conj","f":["aber","doch"],"o":""},{"c":"thishere","t":"conj","f":["weil"],"o":"sub"},{"c":"ru","t":"conj","f":["dass"],"o":"sub"},{"c":"teme","t":"conj","f":["wenn"],"o":"sub"},{"c":"ruke","t":"conj","f":["ob"],"o":"sub"},{"c":"shame","t":"conj","f":["denn"],"o":"sub"},{"c":"oreze","t":"q","f":["wer"],"o":""},{"c":"thome","t":"q","f":["was"],"o":""},{"c":"hode","t":"q","f":["wo"],"o":""},{"c":"ihere","t":"q","f":["wohin"],"o":""},{"c":"nizume","t":"q","f":["woher"],"o":""},{"c":"thunure","t":"q","f":["wann"],"o":""},{"c":"tholese","t":"q","f":["warum","wieso","weshalb"],"o":""},{"c":"thasone","t":"q","f":["wie"],"o":""},{"c":"zo","t":"part","f":["nicht"],"o":"neg"},{"c":"mo","t":"part","f":["mehr"],"o":"comp"},{"c":"ro","t":"part","f":["meist","meisten"],"o":"sup"},{"c":"ha","t":"part","f":["ja"],"o":""},{"c":"ne","t":"part","f":["nein"],"o":""},{"c":"ute","t":"int","f":["hallo"],"o":""},{"c":"heshe","t":"int","f":["tschüss"],"o":""},{"c":"ule","t":"int","f":["willkommen"],"o":""},{"c":"tuse","t":"int","f":["bitte"],"o":""},{"c":"kameze","t":"int","f":["danke"],"o":""},{"c":"lime","t":"int","f":["entschuldigung"],"o":""},{"c":"hidoshe","t":"num","f":["null"],"o":""},{"c":"danare","t":"num","f":["eins"],"o":""},{"c":"lekone","t":"num","f":["zwei"],"o":""},{"c":"senithe","t":"num","f":["drei"],"o":""},{"c":"telike","t":"num","f":["vier"],"o":""},{"c":"lade","t":"num","f":["fünf"],"o":""},{"c":"maze","t":"num","f":["sechs"],"o":""},{"c":"thele","t":"num","f":["sieben"],"o":""},{"c":"mashe","t":"num","f":["acht"],"o":""},{"c":"mure","t":"num","f":["neun"],"o":""},{"c":"tehe","t":"num","f":["zehn"],"o":""},{"c":"tale","t":"num","f":["zwölf"],"o":""},{"c":"vihate","t":"num","f":["zwanzig"],"o":""},{"c":"sevune","t":"num","f":["hundert"],"o":""},{"c":"name","t":"num","f":["tausend"],"o":""},{"c":"othe","t":"det","f":["dieser","diese","dieses","diesen","diesem","dieser"],"o":""},{"c":"lukaze","t":"det","f":["jener","jene","jenes","jenen","jenem"],"o":""},{"c":"zire","t":"det","f":["alle","allen","aller","alles"],"o":"pl"},{"c":"nizale","t":"det","f":["viele","vielen","vieler"],"o":"pl"},{"c":"mehare","t":"det","f":["einige","einigen","einiger"],"o":"pl"},{"c":"taruthe","t":"det","f":["wenige","wenigen","weniger"],"o":"pl"},{"c":"nakare","t":"det","f":["manche","manchen","mancher"],"o":"pl"},{"c":"ivime","t":"det","f":["jeder","jede","jedes","jeden","jedem"],"o":"sg"},{"c":"zeshe","t":"det","f":["welcher","welche","welches","welchen","welchem"],"o":""},{"c":"toke","t":"post","f":["über"],"o":""},{"c":"rele","t":"post","f":["unter"],"o":""},{"c":"shate","t":"post","f":["vor"],"o":""},{"c":"ehe","t":"post","f":["hinter"],"o":""},{"c":"heve","t":"post","f":["neben"],"o":""},{"c":"take","t":"post","f":["zwischen"],"o":""},{"c":"soze","t":"post","f":["ohne"],"o":""},{"c":"leme","t":"post","f":["gegen"],"o":""},{"c":"vone","t":"post","f":["um"],"o":""},{"c":"nove","t":"post","f":["wegen"],"o":""},{"c":"ore","t":"post","f":["während"],"o":""},{"c":"nute","t":"post","f":["bis"],"o":""},{"c":"mithe","t":"post","f":["für"],"o":""}],"stats":{"nouns":205,"verbs":101,"adjs":85,"inv":109,"total":503}};
+/* Sathuri-Engine: Silben, Wörterbuch, Übersetzer Deutsch <-> Sathuri (regelbasiert). */
+function createEngine(LEX) {
+'use strict';
+
+/* ================= Grundlagen ================= */
+const CASES = ['nom','akk','gen','dat','loc','abl','ins'];
+const SUF = {nom:'',akk:'no',gen:'la',dat:'mi',loc:'su',abl:'tha',ins:'ze'};
+const CASE_NAME = {nom:'Nominativ',akk:'Akkusativ',gen:'Genitiv',dat:'Dativ',loc:'Lokativ',abl:'Ablativ',ins:'Instrumental'};
+const CASE_TAG = {nom:'NOM',akk:'AKK',gen:'GEN',dat:'DAT',loc:'LOK',abl:'ABL',ins:'INS'};
+const NEGW = 'zo', QW = 've', COMPW = 'mo', SUPW = 'ro';
+const low = s => s.toLowerCase();
+const capFirst = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const SYL_RE = /(?:th|sh|[ktslrmnvzdh])?[aeiou]/g;
+const WORD_OK = /^(?:(?:th|sh|[ktslrmnvzdh])?[aeiou])+$/;
+function syllabify(w) { return w.match(SYL_RE) || []; }
+function isSathuri(w) { return WORD_OK.test(w); }
+const stemOf = c => c;                       // Stämme stehen fertig im Lexikon
+const inflN = (stem, pl, c) => stem + (pl ? 'ki' : '') + SUF[c];
+
+/* ================= Deutsche Morphologie ================= */
+const IRREG = {
+  sein:  {pres:['bin','bist','ist','sind','seid','sind'], past:['war','warst','war','waren','wart','waren'], part:'gewesen', imp:['sei']},
+  haben: {pres:['habe','hast','hat','haben','habt','haben'], past:['hatte','hattest','hatte','hatten','hattet','hatten'], part:'gehabt', imp:['hab','habe']},
+  werden:{pres:['werde','wirst','wird','werden','werdet','werden'], past:['wurde','wurdest','wurde','wurden','wurdet','wurden'], part:'geworden', imp:['werde']},
+  können:{pres:['kann','kannst','kann','können','könnt','können'], past:['konnte','konntest','konnte','konnten','konntet','konnten'], part:'gekonnt', imp:[]},
+  müssen:{pres:['muss','musst','muss','müssen','müsst','müssen'], past:['musste','musstest','musste','mussten','musstet','mussten'], part:'gemusst', imp:[]},
+  wollen:{pres:['will','willst','will','wollen','wollt','wollen'], past:['wollte','wolltest','wollte','wollten','wolltet','wollten'], part:'gewollt', imp:[], alt:['möchte','möchtest','möchten','möchtet']},
+  dürfen:{pres:['darf','darfst','darf','dürfen','dürft','dürfen'], past:['durfte','durftest','durfte','durften','durftet','durften'], part:'gedurft', imp:[]},
+  sollen:{pres:['soll','sollst','soll','sollen','sollt','sollen'], past:['sollte','solltest','sollte','sollten','solltet','sollten'], part:'gesollt', imp:[]},
+  mögen: {pres:['mag','magst','mag','mögen','mögt','mögen'], past:['mochte','mochtest','mochte','mochten','mochtet','mochten'], part:'gemocht', imp:[]},
+  wissen:{pres:['weiß','weißt','weiß','wissen','wisst','wissen'], past:['wusste','wusstest','wusste','wussten','wusstet','wussten'], part:'gewusst', imp:['wisse']},
+};
+function verbStem(inf) {
+  if (/(ern|eln)$/.test(inf)) return inf.slice(0,-1);
+  if (/en$/.test(inf)) return inf.slice(0,-2);
+  return inf.slice(0,-1);
+}
+const needE = st => /(t|d|chn|gn|fn|tm|dm)$/.test(st);
+const CONJ_CACHE = new Map();
+function conj(v) {
+  if (CONJ_CACHE.has(v)) return CONJ_CACHE.get(v);
+  let r;
+  if (IRREG[v.inf]) r = IRREG[v.inf];
+  else {
+    const st = verbStem(v.inf), e = needE(st), sib = /[sßxz]$/.test(st);
+    const pres = [st + 'e',
+      v.du || (sib ? st + 't' : st + (e ? 'est' : 'st')),
+      v.er || (st + (e ? 'et' : 't')),
+      v.inf,
+      st + (e ? 'et' : 't'),
+      v.inf];
+    let past;
+    const p = v.pret;
+    if (/te$/.test(p)) past = [p, p + 'st', p, p + 'n', p + 't', p + 'n'];
+    else {
+      const dt = /[dt]$/.test(p), ss = /[sßxz]$/.test(p);
+      past = [p, p + (dt ? 'est' : ss ? 't' : 'st'), p, p + 'en', p + (dt ? 'et' : 't'), p + 'en'];
+    }
+    let imp = [st];
+    if (v.du && !/[äö]/.test(v.du)) {
+      let b = v.du;
+      if (/sst$/.test(b)) b = b.slice(0,-1);
+      else if (/st$/.test(b)) { b = b.slice(0,-2); if (/[aeiouäöü]$/.test(b)) b += 's'; }
+      else if (/t$/.test(b)) b = b.slice(0,-1);
+      imp = [b];
+    } else if (e || /[ln]$/.test(st) === false) imp = [st, st + 'e'];
+    r = {pres, past, part: v.part, imp};
+  }
+  CONJ_CACHE.set(v, r);
+  return r;
+}
+function genSg(s) {
+  if (/nis$/.test(s)) return s + 'ses';
+  if (/(s|ß|x|z|sch)$/.test(s)) return s + 'es';
+  const syl = (s.match(/[aeiouäöüy]+/gi) || []).length;
+  return syl <= 1 ? s + 'es' : s + 's';
+}
+function nounDE(n, pl, c) {
+  if (pl) return (c === 'dat' && !/[ns]$/.test(n.p)) ? n.p + 'n' : n.p;
+  if (c === 'gen') { if (n.g === 'f') return n.s; if (n.w) return n.gen || n.p; return n.gen || genSg(n.s); }
+  if (n.w && (c === 'akk' || c === 'dat')) return n.p;
+  return n.s;
+}
+function nounFormsDE(n) {
+  const out = [{f:n.s, num:'sg'}];
+  if (n.s === 'Haus') out.push({f:'Hause', num:'sg', hint:['dat']});
+  if (n.w) { out.push({f:n.p, num:'wk'}); if (n.gen) out.push({f:n.gen, num:'sg', hint:['gen']}); }
+  else {
+    if (n.g !== 'f') {
+      const g = nounDE(n,false,'gen');
+      [g, n.s + 's', n.s + 'es'].forEach(f => out.push({f, num:'sg', hint:['gen']}));
+    }
+    out.push({f:n.p, num:'pl'});
+    if (!/[ns]$/.test(n.p)) out.push({f:n.p + 'n', num:'pl', hint:['dat']});
+  }
+  return out;
+}
+function declAdj(stem, e, dst) {
+  if (e === '') return stem;
+  if (dst) stem = dst; else if (/el$/.test(stem)) stem = stem.slice(0,-2) + 'l';
+  if (/e$/.test(stem) && e[0] === 'e') return stem + e.slice(1);
+  return stem + e;
+}
+function adjStems(a) {
+  const b = a.base;
+  const comp = a.comp || (/e$/.test(b) ? b + 'r' : b + 'er');
+  const sup = a.sup || (/e$/.test(b) ? b + 'st' : /(t|d|s|ß|z|x|sch)$/.test(b) ? b + 'est' : b + 'st');
+  return {pos:b, comp, sup};
+}
+const ADJ_ENDS = ['','e','en','er','es','em'];
+function adjFormsDE(a) {
+  const st = adjStems(a), out = [];
+  for (const deg of ['pos','comp','sup']) {
+    for (const e of ADJ_ENDS) {
+      if (deg === 'sup' && e === '') continue;
+      out.push({f: declAdj(st[deg], e, deg === 'pos' ? a.dst : ''), deg, infl: e !== ''});
+    }
+  }
+  return out;
+}
+// deutsche Artikel- und Adjektivendungen
+const KEYOF = (g, pl) => pl ? 'pl' : g;
+const DEFART = {nom:{m:'der',f:'die',n:'das',pl:'die'}, akk:{m:'den',f:'die',n:'das',pl:'die'},
+                dat:{m:'dem',f:'der',n:'dem',pl:'den'}, gen:{m:'des',f:'der',n:'des',pl:'der'}};
+const DIES = {nom:{m:'er',f:'e',n:'es',pl:'e'}, akk:{m:'en',f:'e',n:'es',pl:'e'}, dat:{m:'em',f:'er',n:'em',pl:'en'}, gen:{m:'es',f:'er',n:'es',pl:'er'}};
+const EIN = {nom:{m:'',f:'e',n:'',pl:'e'}, akk:{m:'en',f:'e',n:'',pl:'e'}, dat:{m:'em',f:'er',n:'em',pl:'en'}, gen:{m:'es',f:'er',n:'es',pl:'er'}};
+const AE = {
+  weak:  {nom:{m:'e',f:'e',n:'e',pl:'en'}, akk:{m:'en',f:'e',n:'e',pl:'en'}, dat:{m:'en',f:'en',n:'en',pl:'en'}, gen:{m:'en',f:'en',n:'en',pl:'en'}},
+  mixed: {nom:{m:'er',f:'e',n:'es',pl:'en'}, akk:{m:'en',f:'e',n:'es',pl:'en'}, dat:{m:'en',f:'en',n:'en',pl:'en'}, gen:{m:'en',f:'en',n:'en',pl:'en'}},
+  strong:{nom:{m:'er',f:'e',n:'es',pl:'e'}, akk:{m:'en',f:'e',n:'es',pl:'e'}, dat:{m:'em',f:'er',n:'em',pl:'en'}, gen:{m:'en',f:'er',n:'en',pl:'er'}},
+};
+// Fall-Mengen je Endung (für Fall-Erkennung aus dem Artikel)
+const DEFCASES = {der:{m:['nom'],f:['gen','dat'],n:[],pl:['gen']}, die:{m:[],f:['nom','akk'],n:[],pl:['nom','akk']},
+  das:{m:[],f:[],n:['nom','akk'],pl:[]}, den:{m:['akk'],f:[],n:[],pl:['dat']}, dem:{m:['dat'],f:[],n:['dat'],pl:[]}, des:{m:['gen'],f:[],n:['gen'],pl:[]}};
+const END_EIN = {'':{m:['nom'],f:[],n:['nom','akk'],pl:[]}, 'e':{m:[],f:['nom','akk'],n:[],pl:['nom','akk']},
+  'en':{m:['akk'],f:[],n:[],pl:['dat']}, 'em':{m:['dat'],f:[],n:['dat'],pl:[]}, 'er':{m:[],f:['dat','gen'],n:[],pl:['gen']}, 'es':{m:['gen'],f:[],n:['gen'],pl:[]}};
+const END_DIES = {'er':{m:['nom'],f:['dat','gen'],n:[],pl:['gen']}, 'e':{m:[],f:['nom','akk'],n:[],pl:['nom','akk']},
+  'es':{m:['gen'],f:[],n:['nom','akk','gen'],pl:[]}, 'en':{m:['akk'],f:[],n:[],pl:['dat']}, 'em':{m:['dat'],f:[],n:['dat'],pl:[]}};
+const END_PLQ = {'e':{m:[],f:[],n:[],pl:['nom','akk']}, 'en':{m:[],f:[],n:[],pl:['dat']}, 'er':{m:[],f:[],n:[],pl:['gen']}};
+
+/* ================= Pronomen ================= */
+const PRON = [
+  {p:1,n:'sg',stem:'ona',nom:'ich',akk:'mich',dat:'mir',poss:'mein',pe:'mein'},
+  {p:2,n:'sg',stem:'elo',nom:'du',akk:'dich',dat:'dir',poss:'dein',pe:'dein'},
+  {p:3,n:'sg',stem:'ira',nom:'er',akk:'ihn',dat:'ihm',poss:'sein',pe:'sein'},
+  {p:1,n:'pl',stem:'ona',nom:'wir',akk:'uns',dat:'uns',poss:'unser',pe:'unser'},
+  {p:2,n:'pl',stem:'elo',nom:'ihr',akk:'euch',dat:'euch',poss:'euer',pe:'eur'},
+  {p:3,n:'pl',stem:'ira',nom:'sie',akk:'sie',dat:'ihnen',poss:'ihr',pe:'ihr'},
+];
+const pronIdx = (p, n) => (n === 'pl' ? 3 : 0) + (p - 1);
+function pronCon(p, n, c) { return inflN(PRON[pronIdx(p,n)].stem, n === 'pl', c); }
+function pronDE(p, n, c) {
+  const x = PRON[pronIdx(p,n)];
+  if (c === 'nom') return x.nom;
+  if (c === 'akk') return x.akk;
+  return x.dat;
+}
+const PRON_DE = {
+  ich:[{p:1,n:'sg',cases:['nom']}], mich:[{p:1,n:'sg',cases:['akk']}], mir:[{p:1,n:'sg',cases:['dat']}],
+  du:[{p:2,n:'sg',cases:['nom']}], dich:[{p:2,n:'sg',cases:['akk']}], dir:[{p:2,n:'sg',cases:['dat']}],
+  er:[{p:3,n:'sg',cases:['nom']}], ihn:[{p:3,n:'sg',cases:['akk']}], ihm:[{p:3,n:'sg',cases:['dat']}],
+  es:[{p:3,n:'sg',cases:['nom','akk']}],
+  sie:[{p:3,n:'sg',cases:['nom','akk']},{p:3,n:'pl',cases:['nom','akk']}],
+  wir:[{p:1,n:'pl',cases:['nom']}], uns:[{p:1,n:'pl',cases:['akk','dat']}],
+  ihr:[{p:2,n:'pl',cases:['nom']},{p:3,n:'sg',cases:['dat']}], euch:[{p:2,n:'pl',cases:['akk','dat']}],
+  ihnen:[{p:3,n:'pl',cases:['dat']}],
+};
+const POSS_B = [{b:'mein',p:1,n:'sg',e:'mein'},{b:'dein',p:2,n:'sg',e:'dein'},{b:'sein',p:3,n:'sg',e:'sein'},
+  {b:'unser',p:1,n:'pl',e:'unser'},{b:'euer',p:2,n:'pl',e:'eur'},{b:'ihr',p:3,n:'sg',e:'ihr'}];
+function possWord(p, n, c, g, pl) {       // mein/dein/... dekliniert
+  const x = PRON[pronIdx(p,n)];
+  const end = EIN[c][KEYOF(g, pl)];
+  return end === '' ? x.poss : x.pe + end;
+}
+
+/* ================= Deutsch-Index ================= */
+const DE = Object.create(null);
+const addDE = (k, c) => { (DE[low(k)] ||= []).push(c); };
+function addVerbForms(v) {
+  const c = conj(v), map = new Map();
+  const add = (f, an) => { const k = low(f); if (!map.has(k)) map.set(k, []); map.get(k).push(an); };
+  c.pres.forEach((f,i) => add(f, {kind:'fin', tense:'pres', person:i}));
+  c.past.forEach((f,i) => add(f, {kind:'fin', tense:'past', person:i}));
+  add(v.inf, {kind:'inf'});
+  add(c.part, {kind:'part'});
+  (c.imp || []).forEach(f => add(f, {kind:'imp'}));
+  if (c.alt) c.alt.forEach((f,i) => add(f, {kind:'fin', tense:'pres', person:[0,1,3,4][i] === undefined ? 2 : [0,1,3,4][i]}));
+  if (c.alt) add('möchte', {kind:'fin', tense:'pres', person:2});
+  for (const [k, an] of map) addDE(k, {t:'verb', lex:v, an});
+}
+LEX.nouns.forEach(n => {
+  const byForm = new Map();
+  nounFormsDE(n).forEach(x => {
+    const k = low(x.f);
+    const e = byForm.get(k) || {t:'noun', lex:n, nums:new Set(), hint:null};
+    e.nums.add(x.num);
+    if (x.hint) e.hint = e.hint ? e.hint.concat(x.hint) : x.hint.slice();
+    if (!x.hint) e.plain = true;
+    byForm.set(k, e);
+  });
+  for (const [k, e] of byForm) { if (e.plain) e.hint = null; addDE(k, e); }
+});
+LEX.verbs.forEach(addVerbForms);
+LEX.adjs.forEach(a => {
+  const byForm = new Map();
+  adjFormsDE(a).forEach(x => { const k = low(x.f); if (!byForm.has(k)) byForm.set(k, {t:'adj', lex:a, deg:x.deg, infl:x.infl}); });
+  for (const [k, e] of byForm) addDE(k, e);
+});
+LEX.inv.forEach(e => {
+  e.f.forEach(f => {
+    if (e.t === 'post') addDE(f, {t:'prep', mode:'post', lex:e});
+    else if (e.t === 'det') {
+      const base = e.f[0].replace(/(er|e)$/, '');
+      addDE(f, {t:'inv', sub:'det', lex:e, ending: f.slice(base.length), pl: e.o === 'pl', sg: e.o === 'sg', form: f});
+    }
+    else if (e.t === 'num') addDE(f, {t:'num', lex:e});
+    else addDE(f, {t:'inv', sub:e.t, lex:e, key:e.o});
+  });
+});
+// Pronomen, Possessiva, Artikel, Präpositionen
+for (const k in PRON_DE) PRON_DE[k].forEach(o => addDE(k, {t:'pron', p:o.p, n:o.n, cases:o.cases}));
+POSS_B.forEach(x => ['','e','en','em','er','es'].forEach(e =>
+  addDE(e === '' ? x.b : x.e + e, {t:'poss', p:x.p, n:x.n, ending:e, kind:'poss', cases:END_EIN[e]})));
+for (const f in DEFCASES) addDE(f, {t:'det', kind:'def', form:f, cases:DEFCASES[f]});
+['','e','en','em','er','es'].forEach(e => {
+  const cs = JSON.parse(JSON.stringify(END_EIN[e])); cs.pl = [];
+  if (e !== 'e' || true) addDE('ein' + e, {t:'det', kind:'indef', form:'ein' + e, ending:e, cases:cs});
+  addDE('kein' + e, {t:'det', kind:'neg', form:'kein' + e, ending:e, cases:END_EIN[e]});
+});
+const PREP = {mit:'ins', durch:'ins', aus:'abl', zu:'dat', nach:'dat', in:'dyn', an:'dyn', auf:'dyn', bei:'loc'};
+for (const p in PREP) addDE(p, {t:'prep', mode:'case', case:PREP[p], form:p});
+addDE('von', {t:'prep', mode:'von', form:'von'});
+const CONTR = {im:['in','dem'], am:['an','dem'], zum:['zu','dem'], zur:['zu','der'], ins:['in','das'], vom:['von','dem'],
+  beim:['bei','dem'], aufs:['auf','das'], ans:['an','das'], fürs:['für','das'], ums:['um','das'], übers:['über','das'], durchs:['durch','das']};
+// Ziffern
+const DIGITS = {0:'null',1:'eins',2:'zwei',3:'drei',4:'vier',5:'fünf',6:'sechs',7:'sieben',8:'acht',9:'neun',10:'zehn',12:'zwölf',20:'zwanzig',100:'hundert',1000:'tausend'};
+const COP = new Set(['sein','werden','heißen','bleiben','scheinen']);
+
+/* ================= Sathuri-Index ================= */
+const CF = Object.create(null);
+const addCF = (f, a) => { (CF[f] ||= []).push(a); };
+LEX.nouns.forEach(n => [false,true].forEach(pl => CASES.forEach(c => addCF(inflN(n.c, pl, c), {pos:'n', lex:n, pl, case:c}))));
+LEX.adjs.forEach(a => [false,true].forEach(pl => CASES.forEach(c => addCF(inflN(a.c, pl, c), {pos:'a', lex:a, pl, case:c}))));
+LEX.verbs.forEach(v => {
+  addCF(v.c, {pos:'v', lex:v, tense:'pres'});
+  addCF(v.c + 'vo', {pos:'v', lex:v, tense:'pres', cont:true});
+  addCF(v.c + 'ra', {pos:'v', lex:v, tense:'past'});
+  addCF(v.c + 'sha', {pos:'v', lex:v, tense:'fut'});
+  addCF(v.c + 'vora', {pos:'v', lex:v, tense:'past', cont:true});
+  addCF(v.c + 'vosha', {pos:'v', lex:v, tense:'fut', cont:true});
+  addCF(v.c + 'de', {pos:'v', lex:v, tense:'imp'});
+});
+LEX.inv.forEach(e => addCF(e.c, {pos:'i', lex:e}));
+[1,2,3].forEach(p => ['sg','pl'].forEach(n => CASES.forEach(c => addCF(pronCon(p,n,c), {pos:'p', p, n, case:c}))));
+addCF(QW, {pos:'q'});
+
+/* ================= Glossen ================= */
+function glossN(n, pl, c) { return n.s + (pl ? '.PL' : '') + (c !== 'nom' ? '.' + CASE_TAG[c] : ''); }
+
+/* ================= Deutsch -> Sathuri ================= */
+function tokenizeDE(text) {
+  const out = [], re = /[A-Za-zÄÖÜäöüß]+|\d+|[.,!?;:]/g;
+  let m, first = true;
+  while ((m = re.exec(text))) {
+    const w = m[0];
+    if (/^[.,!?;:]$/.test(w)) { out.push({raw:w, punct:true}); if (/[.!?]/.test(w)) first = true; continue; }
+    out.push({raw:w, low:low(w), cap:/^[A-ZÄÖÜ]/.test(w), first});
+    first = false;
+  }
+  return out;
+}
+function expandContractions(words) {
+  const out = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (w.punct) { out.push(w); continue; }
+    if (/^\d+$/.test(w.raw)) {
+      const nm = DIGITS[parseInt(w.raw,10)];
+      if (nm) { out.push(Object.assign({}, w, {raw:nm, low:nm, cap:false})); continue; }
+    }
+    if (w.low === 'am') {
+      const nx = words[i+1];
+      if (nx && !nx.punct && (DE[nx.low] || []).some(c => c.t === 'adj' && c.deg === 'sup')) continue;   // "am größten"
+    }
+    if (CONTR[w.low]) {
+      const [a, b] = CONTR[w.low];
+      out.push({raw:capFirst(a) === w.raw ? a : a, low:a, cap:w.cap, first:w.first});
+      out.push({raw:b, low:b, cap:false, first:false});
+      continue;
+    }
+    out.push(w);
+  }
+  return out;
+}
+function pickTag(w, i, words) {
+  const cands = DE[w.low] || [];
+  const mk = c => Object.assign({}, c, {raw:w.raw, idx:i});
+  const next = (() => { for (let j = i+1; j < words.length; j++) { if (words[j].punct) return null; return words[j]; } return null; })();
+  const prev = i > 0 && !words[i-1].punct ? words[i-1] : null;
+  const nextTags = () => next ? (DE[next.low] || []) : [];
+  const endsWith = words.length ? (() => { for (let j = words.length - 1; j >= 0; j--) if (words[j].punct) return words[j].raw; return ''; })() : '';
+  if (w.low === 'als') return {t:'prep', mode:'case', case:'abl', form:'als', raw:w.raw, idx:i};
+  if (!cands.length) {
+    if (w.cap) return {t:'name', raw:w.raw, idx:i};
+    return {t:'unk', raw:w.raw, idx:i};
+  }
+  if (cands.length === 1) return mk(cands[0]);
+  // Wortartenwahl
+  const by = t => cands.filter(c => c.t === t);
+  if (w.low === 'sein') {
+    // Possessivum, wenn ein Nomen (ggf. nach Adjektiven) folgt
+    let j = i + 1, ok = false;
+    while (j < words.length && !words[j].punct) {
+      const cs = DE[words[j].low] || [];
+      if (cs.some(c => c.t === 'noun')) { ok = true; break; }
+      if (cs.some(c => c.t === 'adj' && c.infl)) { j++; continue; }
+      break;
+    }
+    const pick = ok ? by('poss')[0] : by('verb')[0];
+    return mk(pick || cands[0]);
+  }
+  if (w.low === 'ihr') {
+    let j = i + 1, ok = false;
+    while (j < words.length && !words[j].punct) {
+      const cs = DE[words[j].low] || [];
+      if (cs.some(c => c.t === 'noun')) { ok = true; break; }
+      if (cs.some(c => c.t === 'adj' && c.infl)) { j++; continue; }
+      break;
+    }
+    return mk(ok ? by('poss')[0] : by('pron')[0]);
+  }
+  if (w.low === 'weiß') {
+    const pv = prev && (DE[prev.low] || []).some(c => c.t === 'pron');
+    return mk(pv ? by('verb')[0] : by('adj')[0]);
+  }
+  const nouns = by('noun'), others = cands.filter(c => c.t !== 'noun');
+  if (nouns.length && others.length) {
+    if (!w.first) return mk(w.cap ? nouns[0] : others[0]);
+    if (!w.cap) return mk(others[0]);
+    if (endsWith === '!' && others.some(c => c.t === 'verb')) return mk(others.find(c => c.t === 'verb'));
+    if (next && (DE[next.low] || []).some(c => c.t === 'pron') && others.some(c => c.t === 'verb')) return mk(others.find(c => c.t === 'verb'));
+    return mk(nouns[0]);
+  }
+  // Rest: erste Kandidatenreihenfolge, Verb > Adjektiv > anderes
+  const pref = ['prep','det','poss','num','inv','pron','verb','adj','noun'];
+  cands.sort((a, b) => pref.indexOf(a.t) - pref.indexOf(b.t));
+  return mk(cands[0]);
+}
+function tagSentence(words) {
+  const ws = expandContractions(words);
+  return ws.map((w, i) => w.punct ? {t:'punct', raw:w.raw, idx:i} : pickTag(w, i, ws));
+}
+
+function detCasesOf(tok) {
+  if (tok.t === 'det' || tok.t === 'poss') return tok.cases;
+  if (tok.t === 'inv' && tok.sub === 'det') return tok.pl ? END_PLQ[tok.ending] : END_DIES[tok.ending];
+  return null;
+}
+function resolveNum(head, np) {
+  if (head.t !== 'noun') return false;
+  const nums = head.nums;
+  if (nums.size === 1 && !nums.has('wk') && !nums.has('amb')) return nums.has('pl');
+  const g = head.lex.g;
+  const dc = np.detTok ? detCasesOf(np.detTok) : null;
+  const numTok = np.num ? np.num.lex.f[0] : null;
+  if (numTok) return numTok !== 'eins';
+  if (np.demo && np.demo.pl) return true;
+  if (nums.has('wk')) {
+    if (np.detTok) {
+      const e = np.detTok.ending || '', f = np.detTok.form;
+      if (np.detTok.t === 'poss' || np.detTok.kind === 'neg' || np.detTok.kind === 'indef') return !['en','em','es'].includes(e) ? (e === 'e' ? true : false) : false;
+      if (f === 'den' || f === 'dem' || f === 'des') return false;
+      if (f === 'der') return false;
+      return true;
+    }
+    if (np.demo) return !['en','em','es'].includes(np.demo.ending || '');
+    return true;
+  }
+  // sg/pl mehrdeutig (z. B. "Zauberer")
+  if (dc) { if ((dc[g] || []).length) return false; if ((dc.pl || []).length) return true; }
+  return nums.has('pl') && !nums.has('sg');
+}
+function npCases(np) {
+  const h = np.head;
+  if (h.t === 'pron') return new Set(h.cases);
+  if (h.t === 'name') return new Set(['nom','akk','dat','gen']);
+  let s = new Set(['nom','akk','dat','gen']);
+  if (h.hint) s = new Set(h.hint);
+  const dt = np.detTok || (np.demo && np.demo.t ? np.demo : null);
+  const dc = np.detTok ? detCasesOf(np.detTok) : (np.demo ? detCasesOf(np.demo) : null);
+  if (dc) {
+    const a = dc[np.pl ? 'pl' : h.lex.g] || [];
+    if (a.length) { const inter = [...s].filter(x => a.includes(x)); s = new Set(inter.length ? inter : a); }
+  }
+  return s;
+}
+function parseNP(toks, i) {
+  const np = {adjs:[], attrs:[], neg:false, poss:null, demo:null, num:null, detTok:null, head:null, pl:false};
+  let j = i;
+  for (;;) {
+    const t = toks[j]; if (!t) break;
+    if (t.t === 'det') { if (np.detTok) break; np.detTok = t; if (t.kind === 'neg') np.neg = true; j++; continue; }
+    if (t.t === 'poss') { if (np.detTok) break; np.poss = t; np.detTok = t; j++; continue; }
+    if (t.t === 'inv' && t.sub === 'det') { if (np.demo) break; np.demo = t; j++; continue; }
+    if (t.t === 'num') { if (np.num) break; np.num = t; j++; continue; }
+    if (t.t === 'adj') { np.adjs.push(t); j++; continue; }
+    if (t.t === 'noun' || t.t === 'name' || t.t === 'pron') { np.head = t; j++; break; }
+    break;
+  }
+  if (!np.head) {
+    if (np.adjs.length && !np.detTok && !np.demo && !np.num) return {np:null, adjs:np.adjs, next:j};
+    return {np:null, adjs:np.adjs, next:Math.max(j, i + 1)};
+  }
+  np.pl = resolveNum(np.head, np);
+  if (np.head.t === 'pron') np.pl = np.head.n === 'pl';
+  // Genitiv-Attribute
+  for (;;) {
+    const t = toks[j]; if (!t) break;
+    if (t.t === 'prep' && t.mode === 'von') {
+      const r = parseNP(toks, j + 1);
+      if (r.np) { r.np.gen = true; np.attrs.push(r.np); j = r.next; continue; }
+      break;
+    }
+    if (t.t === 'det' && (t.kind === 'def' || t.kind === 'indef')) {
+      const r = parseNP(toks, j);
+      if (r.np) {
+        const cs = npCases(r.np);
+        if (cs.has('gen') && !cs.has('akk') && !cs.has('nom')) { r.np.gen = true; np.attrs.push(r.np); j = r.next; continue; }
+      }
+    }
+    break;
+  }
+  return {np, next:j};
+}
+function buildItems(toks) {
+  const items = [];
+  let i = 0, pend = null;
+  while (i < toks.length) {
+    const t = toks[i];
+    if (t.t === 'prep') { pend = t; i++; continue; }
+    if (['det','poss','num','adj','noun','pron','name'].includes(t.t) || (t.t === 'inv' && t.sub === 'det')) {
+      const r = parseNP(toks, i);
+      if (r.np) { if (pend) { r.np.pp = pend; pend = null; } items.push({k:'np', np:r.np}); }
+      else r.adjs.forEach(a => items.push({k:'adj', tok:a}));
+      i = Math.max(r.next, i + 1); continue;
+    }
+    if (t.t === 'verb') { items.push({k:'verb', tok:t}); i++; continue; }
+    if (t.t === 'inv') { items.push({k:'inv', tok:t}); i++; continue; }
+    if (t.t === 'unk') { items.push({k:'unk', tok:t}); i++; continue; }
+    i++;
+  }
+  return items;
+}
+
+function translateClauseDE(toks, ctx, notes) {
+  // führendes Bindewort
+  let conj = null;
+  if (toks.length && toks[0].t === 'inv' && toks[0].sub === 'conj') { conj = toks[0]; toks = toks.slice(1); }
+  const isSub = !!(conj && conj.lex.o === 'sub');
+  const items = buildItems(toks);
+  const verbToks = items.filter(it => it.k === 'verb').map(it => it.tok);
+  // finites Verb bestimmen
+  let finTok = null, finAn = null;
+  if (verbToks.length) {
+    finTok = isSub ? verbToks[verbToks.length - 1] : verbToks[0];
+    const pr = finTok.an.find(a => a.kind === 'fin') || finTok.an.find(a => a.kind === 'imp') || finTok.an[0];
+    finAn = pr;
+  }
+  const others = verbToks.filter(v => v !== finTok);
+  let main = null, tense = 'pres', modal = null, imperative = false;
+  if (finTok) {
+    const L = finTok.lex.inf;
+    const part = others.find(o => o.an.some(a => a.kind === 'part'));
+    const inf = others.find(o => o.an.some(a => a.kind === 'inf'));
+    tense = finAn.tense || 'pres';
+    if (finAn.kind === 'imp') { imperative = true; main = finTok.lex; }
+    else if ((L === 'haben' || L === 'sein') && part) { main = part.lex; tense = 'past'; }
+    else if (L === 'werden' && inf) { main = inf.lex; tense = 'fut'; }
+    else if (finTok.lex.fl.includes('x') && (inf || others[0])) { modal = finTok.lex; main = (inf || others[0]).lex; }
+    else main = finTok.lex;
+  }
+  // Imperativ nur mit "!" und ohne Subjektpronomen
+  const hasSubjPron = items.some(it => it.k === 'np' && it.np.head.t === 'pron' && it.np.head.cases.includes('nom') && !it.np.pp);
+  const impOnly = finTok && finTok.an.every(a => a.kind === 'imp');
+  if (!((ctx.end === '!' || impOnly) && items.length && items[0].k === 'verb' && !hasSubjPron && !isSub)) {
+    if (imperative) { imperative = false; }
+  } else if (finTok && !imperative && finTok.an.some(a => a.kind === 'imp' || a.kind === 'inf' || (a.kind === 'fin' && a.person === 4))) {
+    imperative = true; main = finTok.lex; modal = null; tense = 'pres';
+  }
+  const verbFlags = (main ? main.fl : '') + (modal ? modal.fl : '');
+  const motion = main && main.fl.includes('m');
+  // Fälle der Nominalphrasen
+  const coordOf = new Map();
+  for (let k = 0; k + 2 < items.length; k++) {
+    const A = items[k], C = items[k + 1], B = items[k + 2];
+    if (A.k === 'np' && C.k === 'inv' && C.tok.sub === 'conj' && ['und','oder'].includes(C.tok.lex.f[0]) && B.k === 'np') coordOf.set(B.np, A.np);
+  }
+  const nps = items.filter(it => it.k === 'np' && !it.np.pp && !coordOf.has(it.np)).map(it => it.np);
+  const copular = main && COP.has(main.inf);
+  let subj = null;
+  const carryFirst = !!(ctx.prevSubj && conj && !isSub && items.length && items[0].k === 'verb');
+  const rest = [];
+  nps.forEach(np => {
+    const cs = npCases(np);
+    if (!subj && cs.has('nom') && !imperative && !carryFirst) { subj = np; np.case = 'nom'; }
+    else rest.push(np);
+  });
+  const datV = main && main.fl.includes('d');
+  const ditr = main && main.fl.includes('t');
+  const free = [];
+  rest.forEach(np => {
+    const cs = npCases(np);
+    if (np.head.t === 'pron' && cs.size === 1) { np.case = [...cs][0]; return; }
+    if (copular) { np.case = 'nom'; return; }
+    if (cs.size === 1 && !np.head.t.startsWith('name')) { np.case = [...cs][0]; return; }
+    free.push(np);
+  });
+  free.forEach(np => {
+    const cs = npCases(np);
+    const hasAkk = rest.some(o => o.case === 'akk');
+    const hasDat = rest.some(o => o.case === 'dat');
+    if (datV) np.case = (cs.has('dat') && !hasDat) ? 'dat' : 'akk';
+    else if (ditr) np.case = !hasDat && cs.has('dat') ? (hasAkk || free.length > 1 ? 'dat' : 'dat') : 'akk';
+    else np.case = cs.has('akk') ? 'akk' : cs.has('dat') ? 'dat' : 'akk';
+    if (ditr && !hasDat && free.length > 1 && free.indexOf(np) === free.length - 1 && !rest.some(o => o.case === 'akk')) np.case = 'akk';
+  });
+  coordOf.forEach((a, b) => { b.case = a.case; if (!b.pp && a.pp) b.pp = Object.assign({}, a.pp, {noPost:true}); });
+  if (!subj && !imperative && main && !isSub && ctx.prevSubj) {
+    subj = ctx.prevSubj; subj.case = 'nom';
+    items.unshift({k:'np', np:subj});
+  }
+  // "sie" Zahl bestimmen (Verb-Kongruenz)
+  const fixSie = np => {
+    if (np.head.t === 'pron' && np.head.raw && low(np.head.raw) === 'sie' && finAn && finAn.person !== undefined) {
+      const sg = finAn.person === 2 && !finTok.an.some(a => a.person === 5 || a.person === 3);
+      np.head = Object.assign({}, np.head, {n: sg ? 'sg' : 'pl'}); np.pl = !sg;
+    }
+  };
+  if (subj) fixSie(subj);
+  // Ausgabe sammeln
+  const out = [];
+  const T = (w, g, k) => out.push({w, g, k: k || 'w'});
+  const renderNP = (np, c) => {
+    // Genitivattribute zuerst (Besitzer vor Besitztum)
+    np.attrs.forEach(a => renderNP(a, 'gen'));
+    const h = np.head;
+    if (h.t === 'pron') { T(pronCon(h.p, h.n, c), h.raw + (c !== 'nom' ? '.' + CASE_TAG[c] : '')); return; }
+    if (h.t === 'name') { T(h.raw, h.raw + ' (Name)', 'name'); return; }
+    if (np.poss) {
+      const pp = np.poss;
+      T(pronCon(pp.p, pp.n, 'gen'), PRON[pronIdx(pp.p, pp.n)].poss.toUpperCase().replace(/^(.)/, m => m) + '.GEN');
+    }
+    if (np.neg) T(NEGW, 'NEG');
+    if (np.demo) T(np.demo.lex.c, np.demo.lex.f[0]);
+    if (np.num) T(np.num.lex.c, np.num.lex.f[0]);
+    const pl = np.pl && !np.num;
+    T(inflN(h.lex.c, pl, c), glossN(h.lex, pl, c));
+    np.adjs.forEach(a => {
+      if (a.deg === 'comp') T(COMPW, 'mehr');
+      if (a.deg === 'sup') T(SUPW, 'am meisten');
+      T(inflN(a.lex.c, pl, c), a.lex.base + (pl ? '.PL' : '') + (c !== 'nom' ? '.' + CASE_TAG[c] : ''));
+    });
+  };
+  const ppCase = pp => {
+    if (pp.mode === 'post') return 'gen';
+    if (pp.mode === 'von') return 'gen';
+    if (pp.case === 'dyn') return motion ? 'dat' : 'loc';
+    return pp.case;
+  };
+  let sentNeg = false;
+  const body = [];
+  for (let k = 0; k < items.length; k++) {
+    const it = items[k];
+    const sub = [];
+    const push = (w, g, kk) => sub.push({w, g, k: kk || 'w'});
+    if (it.k === 'np') {
+      const np = it.np;
+      const before = out.length;
+      if (np.pp) {
+        const c = ppCase(np.pp);
+        renderNP(np, c);
+        if (np.pp.mode === 'post' && !np.pp.noPost) T(np.pp.lex.c, np.pp.lex.f[0]);
+      } else renderNP(np, np.case || 'akk');
+      continue;
+    }
+    if (it.k === 'adj') {
+      const a = it.tok;
+      if (a.deg === 'comp') T(COMPW, 'mehr');
+      if (a.deg === 'sup') T(SUPW, 'am meisten');
+      T(a.lex.c, a.lex.base); continue;
+    }
+    if (it.k === 'inv') {
+      const t = it.tok;
+      if (t.lex.o === 'neg') {
+        const nx = items[k + 1];
+        if (nx && (nx.k === 'adj' || nx.k === 'np' || (nx.k === 'inv' && nx.tok.sub === 'adv'))) T(NEGW, 'NEG');
+        else sentNeg = true;
+        continue;
+      }
+      if (t.lex.t === 'q') { T(t.lex.c, t.lex.f[0]); continue; }
+      T(t.lex.c, t.lex.f[0]); continue;
+    }
+    if (it.k === 'unk') { T(it.tok.raw, '⟦' + it.tok.raw + '⟧', 'unk'); notes.unknown.push(it.tok.raw); continue; }
+    // Verben werden unten ausgegeben
+  }
+  // Namen/unbekannte Großgeschriebene markieren
+  out.forEach(o => { if (o.k === 'name' && !notes.names.includes(o.w)) notes.names.push(o.w); });
+  // gerade -> Dauerform
+  let cont = false;
+  for (let q = out.length - 1; q >= 0; q--) if (out[q].w === '__gerade__') { out.splice(q, 1); }
+  // Verbkomplex
+  const vo = [];
+  const V = (w, g) => vo.push({w, g, k:'v'});
+  if (main) {
+    const stem = main.c;
+    const contFlag = toks.some(t => t.t === 'unk' && low(t.raw) === 'gerade');
+    if (contFlag) { const ix = out.findIndex(o => o.k === 'unk' && low(o.w) === 'gerade'); if (ix >= 0) { out.splice(ix, 1); const ni = notes.unknown.lastIndexOf('gerade'); if (ni >= 0) notes.unknown.splice(ni, 1); } }
+    const cs = contFlag ? 'vo' : '';
+    const cg = contFlag ? '.DAUER' : '';
+    if (imperative) V(stem + cs + 'de', main.inf + '.BEFEHL');
+    else if (modal) {
+      V(stem, main.inf);
+      V(modal.c + cs + (tense === 'past' ? 'ra' : tense === 'fut' ? 'sha' : ''), modal.inf + (tense === 'past' ? '.PRÄT' : '') + cg);
+    } else {
+      V(stem + cs + (tense === 'past' ? 'ra' : tense === 'fut' ? 'sha' : ''), main.inf + (tense === 'past' ? '.PRÄT' : tense === 'fut' ? '.FUT' : '') + cg);
+    }
+  }
+  const neg = sentNeg ? [{w:NEGW, g:'NEG', k:'w'}] : [];
+  const res = [];
+  if (conj) res.push({w:conj.lex.c, g:conj.lex.f[0], k:'w'});
+  res.push(...out, ...neg, ...vo);
+  if (ctx.end === '?') res.push({w:QW, g:'FRAGE', k:'w'});
+  res.subj = subj;
+  return res;
+}
+
+function splitClauses(tagged) {
+  // Satz in Teilsätze zerlegen: Komma und Bindewörter (nur wenn danach ein Verb folgt)
+  const clauses = [];
+  let cur = [], hasVerb = false, comma = false;
+  const flush = () => { if (cur.length) { cur.comma = comma; clauses.push(cur); comma = false; } cur = []; hasVerb = false; };
+  for (let idx = 0; idx < tagged.length; idx++) {
+    const t = tagged[idx];
+    if (t.t === 'punct') { if (t.raw === ',') { flush(); comma = true; } continue; }
+    if (t.t === 'inv' && t.sub === 'conj') {
+      if (t.lex.o === 'sub') { flush(); cur.push(t); continue; }
+      if (hasVerb) {
+        let ahead = false;
+        for (let j = idx + 1; j < tagged.length; j++) {
+          const u = tagged[j];
+          if (u.t === 'punct' && u.raw === ',') break;
+          if (u.t === 'inv' && u.sub === 'conj') break;
+          if (u.t === 'verb') { ahead = true; break; }
+        }
+        if (ahead) { flush(); cur.push(t); continue; }
+      }
+    }
+    if (t.t === 'verb') hasVerb = true;
+    cur.push(t);
+  }
+  flush();
+  return clauses;
+}
+function translateDE(text) {
+  const notes = {unknown:[], names:[]};
+  const words = tokenizeDE(text);
+  if (!words.length) return {text:'', tokens:[], notes};
+  // Sätze trennen
+  const sentences = []; let cur = [];
+  for (const w of words) {
+    cur.push(w);
+    if (w.punct && /[.!?;:]/.test(w.raw)) { sentences.push(cur); cur = []; }
+  }
+  if (cur.length) sentences.push(cur);
+  const tokens = [];
+  let prevSubj = null;
+  sentences.forEach(sw => {
+    prevSubj = null;
+    let end = '';
+    const last = sw[sw.length - 1];
+    if (last.punct && /[.!?;:]/.test(last.raw)) end = last.raw;
+    const nw = sw.filter(w => !(w.punct && w.raw !== ','));
+    const marked = tokenizeFirst(nw);
+    const tagged = tagSentence(marked);
+    const clauses = splitClauses(tagged);
+    clauses.forEach((cl, ci) => {
+      const isLast = ci === clauses.length - 1;
+      const r = translateClauseDE(cl, {end: isLast ? end : '', prevSubj}, notes);
+      prevSubj = r.subj || prevSubj;
+      r.forEach(t => tokens.push(t));
+      if (!isLast && clauses[ci + 1].comma) tokens.push({w:',', g:'', k:'p'});
+    });
+    if (end && end !== '?' ) tokens.push({w: end === ';' || end === ':' ? '.' : end, g:'', k:'p'});
+    if (end === '?') tokens.push({w:'?', g:'', k:'p'});
+  });
+  const textOut = tokens.map((t, i) => (t.k === 'p' ? t.w : (i ? ' ' : '') + t.w)).join('').replace(/ ,/g, ',');
+  return {text: textOut, tokens, notes};
+}
+function tokenizeFirst(ws) {
+  // Satzanfang neu markieren
+  let first = true;
+  return ws.map(w => { if (w.punct) return w; const o = Object.assign({}, w, {first}); first = false; return o; });
+}
+
+/* ================= Sathuri -> Deutsch ================= */
+function tokenizeCON(text) {
+  const out = [], re = /[A-Za-zÄÖÜäöüß'’\-]+|[.,!?;:]/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const raw = m[0];
+    if (/^[.,!?;:]$/.test(raw)) out.push({raw, punct:true});
+    else out.push({raw, low:low(raw).replace(/[-'’]/g, '')});
+  }
+  return out;
+}
+function analyzeCON(w) { return CF[w] || null; }
+function glossCON(a) {
+  if (!a) return '?';
+  if (a.pos === 'n') return a.lex.s + (a.pl ? '.PL' : '') + (a.case !== 'nom' ? '.' + CASE_TAG[a.case] : '');
+  if (a.pos === 'a') return a.lex.base + (a.pl ? '.PL' : '') + (a.case !== 'nom' ? '.' + CASE_TAG[a.case] : '');
+  if (a.pos === 'v') return a.lex.inf + (a.tense === 'past' ? '.PRÄT' : a.tense === 'fut' ? '.FUT' : a.tense === 'imp' ? '.BEFEHL' : '') + (a.cont ? '.DAUER' : '');
+  if (a.pos === 'p') {
+    if (a.p === 3 && a.n === 'sg') return ({nom:'er/sie/es', akk:'ihn/sie/es', dat:'ihm/ihr'})[a.case] || ('er/sie/es.' + CASE_TAG[a.case]);
+    return PRON[pronIdx(a.p, a.n)].nom + (a.case !== 'nom' ? '.' + CASE_TAG[a.case] : '');
+  }
+  if (a.pos === 'q') return 'FRAGE';
+  if (a.pos === 'i') return a.lex.o === 'neg' ? 'NEG' : a.lex.o === 'comp' ? 'mehr' : a.lex.o === 'sup' ? 'am meisten' : a.lex.f[0];
+  return '?';
+}
+function deAdj(a, deg, e) {          // e: Endung oder '' (Prädikat)
+  const st = adjStems(a.lex)[deg];
+  return declAdj(st, e, deg === 'pos' ? a.lex.dst : '');
+}
+const POST_CASE = {über:'dat', unter:'dat', vor:'dat', hinter:'dat', neben:'dat', zwischen:'dat', ohne:'akk', gegen:'akk', um:'akk', für:'akk', bis:'akk', wegen:'gen', während:'gen'};
+function deNP(np, c) {
+  const h = np.head;
+  if (h.pos === 'p') return [pronDE(h.p, h.n, c === 'gen' ? 'dat' : c)];
+  if (h.pos === 'u') return [h.raw];
+  const n = h.lex, pl = np.pl, g = n.g, key = KEYOF(g, pl);
+  let det = null, mode = 'weak';
+  if (np.poss) { det = possWord(np.poss.p, np.poss.n, c, g, pl); mode = 'mixed'; }
+  else if (np.neg) { const e = EIN[c][key]; det = 'kein' + e; mode = 'mixed'; }
+  else if (np.demo) {
+    const L = np.demo.lex, base = L.f[0].replace(/(er|e)$/, '');
+    if (L.o === 'pl') {
+      const e = c === 'dat' ? 'en' : c === 'gen' ? 'er' : 'e';
+      det = base + e; mode = (base === 'all') ? 'weak' : 'strong';
+    } else { det = base + DIES[c][key]; mode = 'weak'; }
+  } else if (np.num) {
+    const w = np.num.lex.f[0];
+    if (w === 'eins') { det = 'ein' + EIN[c][key]; mode = 'mixed'; }
+    else { det = w; mode = 'strong'; }
+  } else { det = DEFART[c][key]; }
+  const words = [];
+  if (det) words.push(det);
+  np.adjs.forEach(a => {
+    const m = np.num && np.num.lex.f[0] !== 'eins' ? 'strong' : mode;
+    const e = AE[m][c][key];
+    words.push(deAdj(a, a.deg, e));
+  });
+  words.push(nounDE(n, pl, c));
+  np.attrs.forEach(a => words.push(...deNP(a, 'gen')));
+  return words;
+}
+function conjDE(lex, person, tense) {
+  const c = conj(lex);
+  return tense === 'past' ? c.past[person] : c.pres[person];
+}
+function translateCON(text) {
+  const words = tokenizeCON(text);
+  const notes = {unknown:[]};
+  const tokens = [], de = [];
+  const state = {prev:null};
+  // Sätze
+  let sent = [];
+  const sentences = [];
+  words.forEach(w => { sent.push(w); if (w.punct && /[.!?]/.test(w.raw)) { sentences.push(sent); sent = []; } });
+  if (sent.length) sentences.push(sent);
+  sentences.forEach(sw => {
+    const lastP = sw[sw.length - 1];
+    let end = lastP && lastP.punct && /[.!?]/.test(lastP.raw) ? lastP.raw : '';
+    // Teilsätze nach Komma
+    const clausesRaw = []; let cur = [];
+    sw.forEach(w => { if (w.punct && w.raw === ',') { clausesRaw.push(cur); cur = []; } else if (!(w.punct)) cur.push(w); });
+    clausesRaw.push(cur);
+    const outClauses = [];
+    // zusätzlich an Bindewörtern trennen
+    const clauses = [];
+    clausesRaw.forEach((cl, ri) => {
+      let part = [], hasV = false, firstPart = true;
+      const pushPart = () => { if (firstPart && ri > 0) part.commaBefore = true; firstPart = false; clauses.push(part); };
+      cl.forEach((w, wi) => {
+        const an = analyzeCON(w.low);
+        if (an) w.an = an[0];
+        const isConj = an && an[0].pos === 'i' && an[0].lex.t === 'conj';
+        let verbAfter = false;
+        if (isConj) for (let j = wi + 1; j < cl.length; j++) {
+          const a2 = analyzeCON(cl[j].low);
+          if (a2 && a2[0].pos === 'i' && a2[0].lex.t === 'conj') break;
+          if (a2 && a2[0].pos === 'v') { verbAfter = true; break; }
+        }
+        if (isConj && (an[0].lex.o === 'sub' || (hasV && verbAfter)) && part.length) { pushPart(); part = []; hasV = false; }
+        if (an && an[0].pos === 'v') hasV = true;
+        part.push(w);
+      });
+      if (part.length) pushPart();
+    });
+    clauses.forEach((cl, ci) => {
+      cl.forEach(w => {
+        const an = analyzeCON(w.low);
+        const a = an ? an[0] : null;
+        tokens.push({w:w.raw, g: a ? glossCON(a) : '⟦' + w.raw + '⟧', k: a ? 'w' : 'unk'});
+        if (a && a.pos === 'p' && a.p === 3 && a.n === 'sg') notes.ira = true;
+        if (!a) notes.unknown.push(w.raw);
+      });
+      const isLast = ci === clauses.length - 1;
+      const s = deClause(cl, notes, isLast ? end : '', state);
+      const st = cl[0] && analyzeCON(cl[0].low);
+      const noComma = ci && st && st[0].pos === 'i' && st[0].lex.t === 'conj' && ['und','oder'].includes(st[0].lex.f[0]);
+      de.push((ci ? (noComma ? ' ' : ', ') : '') + s);
+      if (!isLast && clauses[ci + 1].commaBefore) tokens.push({w:',', g:'', k:'p'});
+    });
+    if (end) tokens.push({w:end, g:'', k:'p'});
+    de.push(end === '?' ? '?' : end === '!' ? '!' : '.');
+  });
+  let textOut = '';
+  let cap = true;
+  const joined = de.join('').replace(/\s+,/g, ',').replace(/ +([.!?])/g, '$1').replace(/([.!?])(?=\S)/g, '$1 ');
+  textOut = joined.replace(/(^|[.!?]\s+)([a-zäöü])/g, (m, a, b) => a + b.toUpperCase()).trim();
+  return {text: textOut, tokens, notes};
+}
+function deClause(cl, notes, end, state) {
+  const items = [];
+  const an = cl.map(w => { const a = analyzeCON(w.low); return {w, a: a ? a[0] : null}; });
+  // Nominalphrasen gruppieren
+  let i = 0, pendingAttr = [], cj = null, q = end === '?';
+  const verbs = [];
+  const nps = [];
+  const seq = [];   // Reihenfolge der Elemente (np/adv/adj/...)
+  let sentNeg = false;
+  const get = k => an[k] ? an[k].a : null;
+  while (i < an.length) {
+    const a = get(i), raw = an[i].w.raw;
+    if (!a) { seq.push({k:'np', np:{head:{pos:'u', raw}, adjs:[], attrs:[], pl:false}, c:null, i}); i++; continue; }
+    if (a.pos === 'q') { q = true; i++; continue; }
+    if (a.pos === 'v') { verbs.push(a); i++; continue; }
+    if (a.pos === 'i') {
+      const L = a.lex;
+      if (L.t === 'conj' && i === 0) { cj = L; i++; continue; }
+      if (L.o === 'neg') {
+        const nx = get(i + 1);
+        if (nx && (nx.pos === 'n' || nx.pos === 'p')) { pendingAttr.push({neg:true}); }
+        else if (nx && nx.pos === 'a' && !nx.case) { seq.push({k:'negadj'}); }
+        else if (nx && nx.pos === 'a') { seq.push({k:'negadj'}); }
+        else sentNeg = true;
+        i++; continue;
+      }
+      if (L.o === 'comp' || L.o === 'sup') { pendingAttr.push({deg: L.o === 'comp' ? 'comp' : 'sup'}); i++; continue; }
+      if (L.t === 'det' || L.t === 'num') { pendingAttr.push({mod:L}); i++; continue; }
+      if (L.t === 'post') { seq.push({k:'post', lex:L}); i++; continue; }
+      seq.push({k:'inv', lex:L, i}); i++; continue;
+    }
+    if (a.pos === 'a') {
+      // alleinstehendes Adjektiv (Prädikat)
+      const deg = pendingAttr.find(p => p.deg); pendingAttr = pendingAttr.filter(p => !p.deg);
+      const ng = seq.length && seq[seq.length - 1].k === 'negadj';
+      if (ng) seq.pop();
+      seq.push({k:'adj', a, deg: deg ? deg.deg : 'pos', neg: ng});
+      i++; continue;
+    }
+    if (a.pos === 'n' || a.pos === 'p') {
+      const np = {head: a.pos === 'p' ? {pos:'p', p:a.p, n:a.n} : {pos:'n', lex:a.lex}, adjs:[], attrs:[], pl: a.pos === 'p' ? a.n === 'pl' : a.pl, c:a.case, poss:null, neg:false, demo:null, num:null};
+      pendingAttr.forEach(p => {
+        if (p.neg) np.neg = true;
+        else if (p.mod) { if (p.mod.t === 'num') np.num = {lex:p.mod}; else np.demo = {lex:p.mod}; }
+        else if (p.attrNP) np.attrs.push(p.attrNP);
+        else if (p.possP) np.poss = p.possP;
+      });
+      pendingAttr = pendingAttr.filter(p => p.deg);
+      if (np.demo && np.demo.lex.o === 'pl') np.pl = np.pl || true;
+      if (np.num) np.pl = np.num.lex.f[0] !== 'eins';
+      i++;
+      // Adjektive hinter dem Nomen, gleiche Endung
+      let pendDeg = null;
+      for (;;) {
+        const n1 = get(i), n2 = get(i + 1);
+        if (n1 && n1.pos === 'i' && (n1.lex.o === 'comp' || n1.lex.o === 'sup') && n2 && n2.pos === 'a' && n2.case === a.case && n2.pl === a.pl) { pendDeg = n1.lex.o; i++; continue; }
+        if (n1 && n1.pos === 'a' && a.pos === 'n' && n1.case === a.case && n1.pl === a.pl) {
+          const aft = get(i + 1);
+          if (aft && aft.pos === 'v' && COP.has(aft.lex.inf)) { if (pendDeg) pendingAttr.push({deg: pendDeg}); break; }
+          np.adjs.push({lex:n1.lex, deg: pendDeg === 'comp' ? 'comp' : pendDeg === 'sup' ? 'sup' : 'pos'}); pendDeg = null; i++; continue; }
+        break;
+      }
+      // Genitiv: Besitzer (vor Nomen) oder Postposition
+      if (np.c === 'gen') {
+        const nx = get(i);
+        if (nx && nx.pos === 'i' && nx.lex.t === 'post') { seq.push({k:'pp', np, post:nx.lex}); i++; continue; }
+        const nx2 = get(i);
+        if (nx2 && (nx2.pos === 'n' || (nx2.pos === 'a' && false))) {
+          if (a.pos === 'p' && !(np.adjs.length)) pendingAttr.push({possP:{p:a.p, n:a.n}});
+          else pendingAttr.push({attrNP: np});
+          continue;
+        }
+        // adj-Folge zwischen Besitzer und Besitztum: Besitzer ohne Adjektive bevorzugt
+      }
+      seq.push({k:'np', np, c:np.c, i});
+      continue;
+    }
+    i++;
+  }
+  // Koordination: NP und/oder NP im gleichen Fall zusammenfassen
+  for (let k = 0; k + 2 < seq.length; k++) {
+    const A = seq[k], C = seq[k + 1], B = seq[k + 2];
+    if (A.k === 'np' && C.k === 'inv' && C.lex.t === 'conj' && ['und','oder'].includes(C.lex.f[0]) && B.k === 'np' && B.c === A.c && A.np.head.pos !== 'u') {
+      (A.coord ||= []).push({word: C.lex.f[0], np: B.np});
+      seq.splice(k + 1, 2); k--;
+    }
+  }
+  // Subjekt, Verben
+  let tense = 'pres', main = null, modal = null, imperative = false, cont = false;
+  const modals = verbs.filter(v => v.lex.fl.includes('x'));
+  const fin = modals.length && verbs.length > 1 ? modals[0] : verbs[0];
+  if (fin) {
+    tense = fin.tense; cont = !!fin.cont || verbs.some(v => v.cont);
+    if (fin.tense === 'imp') imperative = true;
+    if (modals.length && verbs.length > 1) { modal = fin.lex; main = verbs.find(v => v !== fin).lex; }
+    else main = fin.lex;
+  }
+  const copular = main && COP.has(main.inf);
+  const motion = main && main.fl.includes('m');
+  const dativeVerb = main && (main.fl.includes('d') || main.fl.includes('t'));
+  // Subjekt
+  const nomNPs = seq.filter(s => s.k === 'np' && s.c === 'nom');
+  let subj = nomNPs.length ? nomNPs[0].np : null;
+  if (!subj) { const u = seq.find(s => s.k === 'np' && s.np.head.pos === 'u'); if (u) { subj = u.np; u.c = 'nom'; nomNPs.push(u); } }
+  const first = seq[0];
+  const hasComp = seq.some(s => (s.k === 'adj' && s.deg === 'comp') || (s.k === 'np' && s.np.adjs && s.np.adjs.some(a => a.deg === 'comp')));
+  // Wörter erzeugen
+  const join = (it, c) => {
+    let w = deNP(it.np, c);
+    (it.coord || []).forEach(x => { w = w.concat([x.word], deNP(x.np, c)); });
+    return w;
+  };
+  const place = it => {
+    if (it.k === 'pp') {
+      const c = POST_CASE[it.post.f[0]] || 'dat';
+      return [it.post.f[0], ...join(it, c)];
+    }
+    switch (it.c) {
+      case 'nom': return join(it, 'nom');
+      case 'akk': return join(it, 'akk');
+      case 'dat': return dativeVerb ? join(it, 'dat') : ['zu', ...join(it, 'dat')];
+      case 'loc': return ['in', ...join(it, 'dat')];
+      case 'abl': return hasComp ? ['als', ...join(it, 'nom')] : ['aus', ...join(it, 'dat')];
+      case 'ins': return ['mit', ...join(it, 'dat')];
+      case 'gen': return ['von', ...join(it, 'dat')];
+      default: return join(it, 'akk');
+    }
+  };
+  const wordsOf = it => {
+    if (it.k === 'np' || it.k === 'pp') return place(it);
+    if (it.k === 'inv') return [it.lex.f[0]];
+    if (it.k === 'adj') {
+      const st = adjStems(it.a.lex);
+      const deg = it.deg;
+      const w = deg === 'sup' ? 'am ' + declAdj(st.sup, 'en', '') : deAdj({lex:it.a.lex}, deg, '');
+      return (it.neg ? ['nicht'] : []).concat([w]);
+    }
+    return [];
+  };
+  // Verbformen
+  const subjItem = subj ? seq.find(s => s.k === 'np' && s.np === subj) : null;
+  const personOf = np => np.head.pos === 'p' ? pronIdx(np.head.p, np.head.n) : (np.pl ? 5 : 2);
+  let subjPerson = 2;
+  let carried = false;
+  if (subj && subjItem) {
+    subjPerson = personOf(subj);
+    if (subjItem.coord && subjItem.coord.some(x => x.word === 'und')) {
+      const ps = [subj, ...subjItem.coord.map(x => x.np)].map(personOf);
+      subjPerson = ps.some(p => p === 0 || p === 3) ? 3 : ps.some(p => p === 1 || p === 4) ? 4 : 5;
+    }
+    state.prev = {person: subjPerson};
+  } else if (!imperative && state.prev && main) { subjPerson = state.prev.person; carried = true; }
+  const subjWords = subjItem ? join(subjItem, 'nom') : [];
+  const restSeq = seq.filter(s => s !== subjItem);
+  // Satzbau
+  const parts = {pre:[], post:[]};
+  let finite = '', infinite = '';
+  if (main) {
+    if (imperative) {
+      const c = conj(main); finite = (c.imp && c.imp[0]) || main.inf;
+    } else if (modal) {
+      finite = conjDE(modal, subjPerson, tense === 'past' ? 'past' : 'pres');
+      infinite = main.inf;
+      if (tense === 'fut') { infinite = main.inf; }
+    } else if (tense === 'fut') {
+      finite = conjDE(IRREGLEX('werden'), subjPerson, 'pres'); infinite = main.inf;
+    } else finite = conjDE(main, subjPerson, tense === 'past' ? 'past' : 'pres');
+  }
+  const negW = sentNeg ? ['nicht'] : [];
+  const contW = cont ? ['gerade'] : [];
+  const isSub = cj && cj.o === 'sub';
+  let wordsOut = [];
+  const restWords = restSeq.flatMap(wordsOf);
+  // Vorfeld: Adverb am Satzanfang
+  let front = [], restWords2 = restWords;
+  if (!isSub && !imperative && !q && first && first.k === 'inv' && first.lex.t === 'adv' && restSeq[0] === first) {
+    front = [first.lex.f[0]];
+    restWords2 = restSeq.slice(1).flatMap(wordsOf);
+  }
+  if (!main) {
+    // Satz ohne Verb
+    wordsOut = [...(cj ? [cj.f[0]] : []), ...subjWords, ...restWords];
+  } else if (isSub) {
+    // Nebensatz: Verb am Ende
+    const verbEnd = infinite ? [infinite, finite] : [finite];
+    wordsOut = [cj.f[0], ...subjWords, ...contW, ...restWords, ...negW, ...verbEnd];
+  } else if (imperative) {
+    wordsOut = [finite, ...negW, ...contW, ...restWords];
+  } else if (q) {
+    const wh = restSeq.filter(s => s.k === 'inv' && s.lex.t === 'q');
+    const whW = wh.flatMap(wordsOf);
+    const restNoWh = restSeq.filter(s => !wh.includes(s)).flatMap(wordsOf);
+    wordsOut = [...(cj ? [cj.f[0]] : []), ...whW, finite, ...subjWords, ...contW, ...restNoWh, ...negW, ...(infinite ? [infinite] : [])];
+  } else {
+    wordsOut = [...(cj ? [cj.f[0]] : []), ...front, ...(front.length ? [finite, ...subjWords] : [...subjWords, finite]), ...contW, ...restWords2, ...negW, ...(infinite ? [infinite] : [])];
+  }
+  return wordsOut.filter(Boolean).join(' ');
+}
+function IRREGLEX(inf) { return LEX.verbs.find(v => v.inf === inf); }
+
+/* ================= Wörterbuch ================= */
+function dictionary() {
+  const rows = [];
+  LEX.nouns.forEach(n => rows.push({c:n.c, de:n.s, pos:'Nomen', info:`${n.g === 'm' ? 'der' : n.g === 'f' ? 'die' : 'das'} ${n.s}, Mz. ${n.p}`, sort:n.s}));
+  LEX.verbs.forEach(v => rows.push({c:v.c, de:v.inf, pos:'Verb', info:conj(v).pres.slice(0,3).join(', ') + ' · ' + conj(v).past[0] + ' · ' + conj(v).part, sort:v.inf}));
+  LEX.adjs.forEach(a => rows.push({c:a.c, de:a.base, pos:'Adjektiv', info:(() => { const s = adjStems(a); return `${s.pos}, ${s.comp}, am ${s.sup}en`; })(), sort:a.base}));
+  const tn = {adv:'Adverb', conj:'Bindewort', q:'Fragewort', part:'Partikel', int:'Ausruf', num:'Zahl', det:'Begleiter', post:'Nachwort'};
+  LEX.inv.forEach(e => rows.push({c:e.c, de:e.f[0], pos:tn[e.t] || e.t, info:e.f.length > 1 ? e.f.join(', ') : '', sort:e.f[0]}));
+  [[1,'sg'],[2,'sg'],[3,'sg'],[1,'pl'],[2,'pl'],[3,'pl']].forEach(([p, n]) => rows.push({c:inflN(PRON[pronIdx(p,n)].stem, n === 'pl', 'nom'), de:PRON[pronIdx(p,n)].nom + (p === 3 && n === 'sg' ? ' / sie / es' : ''), pos:'Pronomen', info:'', sort:PRON[pronIdx(p,n)].nom}));
+  rows.push({c:QW, de:'(Fragezeichen-Partikel)', pos:'Partikel', info:'steht am Satzende', sort:'zzzz'});
+  return rows.sort((a, b) => a.sort.localeCompare(b.sort, 'de'));
+}
+function paradigm(row) {
+  // Formen für die Wörterbuchkarte
+  const stem = row.c;
+  if (row.pos === 'Nomen' || row.pos === 'Adjektiv') {
+    return CASES.map(c => [CASE_NAME[c], stem + SUF[c], stem + 'ki' + SUF[c]]);
+  }
+  if (row.pos === 'Verb') return [['Gegenwart', stem], ['Vergangenheit', stem + 'ra'], ['Zukunft', stem + 'sha'], ['Gerade dabei', stem + 'vo'], ['Befehl', stem + 'de']];
+  return null;
+}
+
+return {syllabify, isSathuri, translateDE, translateCON, dictionary, paradigm, SUF, CASE_NAME, CASES, LEX, conj, inflN, pronCon};
+}
+if (typeof module !== 'undefined') module.exports = {createEngine};
+
+/* Sathuri-Schrift: 70 Silbenzeichen (13 Konsonanten x 5 Vokale + 5 reine Vokale).
+   Wie bei einer Buchschrift: Alle Zeichen hängen an einer gemeinsamen Kopflinie, die sich durchs Wort zieht.
+   Der Konsonant ist der Körper unter der Linie. Der Vokal steht als Zusatzzeichen:
+   a = kein Zusatz, e = zwei Striche oben, i = Strich rechts, o = Ring oben, u = Schale unten. */
+const GLYPH_CONS = ['k','t','s','l','r','m','n','v','z','d','h','th','sh'];
+const GLYPH_VOW = ['a','e','i','o','u'];
+const GLYPH_LIST = (() => {
+  const l = [];
+  GLYPH_CONS.forEach(c => GLYPH_VOW.forEach(v => l.push(c + v)));
+  GLYPH_VOW.forEach(v => l.push(v));
+  return l;
+})();
+const GLYPH_VIEW = '0 0 72 118';
+const HEAD_Y = 34;
+
+// Körper der Konsonanten (hängen von der Kopflinie bei y = 34 nach unten)
+const BODIES = {
+  k:  'M20 34 V90 M20 62 C34 62 46 54 50 38 M20 62 C34 62 46 72 52 90',
+  t:  'M34 34 V88 Q34 94 46 92 M14 58 H54',
+  s:  'M50 34 V42 C20 38 18 60 34 64 C52 68 50 90 16 88',
+  l:  'M22 34 V86 Q22 92 32 92 H54 M22 62 H38',
+  r:  'M20 34 V90 M20 48 H36 Q52 48 52 62 Q52 76 36 76 H20',
+  m:  'M14 34 V90 M14 54 Q14 44 28 44 Q42 44 42 58 V90 M42 58 Q42 48 54 48 Q58 48 58 58 V90',
+  n:  'M16 34 V90 M16 54 Q16 44 32 44 Q48 44 48 60 V90',
+  v:  'M14 34 L34 86 L54 34 M34 86 V94',
+  z:  'M34 34 V44 M14 44 H52 L14 86 H54',
+  d:  'M16 34 Q16 62 34 62 Q52 62 52 34 M34 62 V90',
+  h:  'M18 34 Q12 62 18 90 M50 34 Q56 62 50 90 M18 62 Q34 48 50 62',
+  th: 'M34 34 V90 M18 60 Q34 40 50 60 M22 90 H46',
+  sh: 'M16 34 V60 Q16 90 34 90 Q52 90 52 60 V34 M34 62 V78',
+  '': 'M18 34 V78 Q18 92 34 92 Q50 92 50 78 V54',        // Träger für reine Vokale
+};
+const sw = n => `style="stroke-width:calc(var(--sw,1)*${n})"`;
+function glyphParts(syl) {
+  const m = /^(th|sh|[ktslrmnvzdh])?([aeiou])$/.exec(syl);
+  if (!m) return '';
+  const cons = m[1] || '', v = m[2];
+  let g = `<path d="M0 ${HEAD_Y} H72" stroke-linecap="butt" ${sw(4.4)}/>`;
+  g += `<path d="${BODIES[cons]}" ${sw(4.2)}/>`;
+  if (v === 'e') g += `<path d="M24 12 H48 M24 23 H48" ${sw(3.6)}/>`;
+  if (v === 'i') g += `<path d="M65 34 V92" ${sw(4)}/>`;
+  if (v === 'o') g += `<circle cx="36" cy="17" r="8" ${sw(3.6)}/>`;
+  if (v === 'u') g += `<path d="M20 100 Q20 114 36 114 Q52 114 52 100" ${sw(3.8)}/>`;
+  return g;
+}
+function glyphSVG(syl, h, cls) {
+  const H = h || 48;
+  return `<svg class="${cls || 'gl'}" viewBox="${GLYPH_VIEW}" width="${(H * 72 / 118).toFixed(1)}" height="${H}" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-label="${syl}" role="img">${glyphParts(syl)}</svg>`;
+}
+if (typeof module !== 'undefined') module.exports = {glyphSVG, glyphParts, GLYPH_LIST, GLYPH_CONS, GLYPH_VOW, GLYPH_VIEW};
+
+</script>
+<script>
+(function () {
+'use strict';
+const ENG = createEngine(LEX);
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---- Zeichen-Sprite ---- */
+$('#sprite defs').innerHTML = GLYPH_LIST.map(s => `<symbol id="g-${s}" viewBox="${GLYPH_VIEW}">${glyphParts(s)}</symbol>`).join('');
+const glyph = s => `<svg class="gl" viewBox="${GLYPH_VIEW}" aria-hidden="true"><use href="#g-${s}"/></svg>`;
+$('#hero').innerHTML = ['sa', 'thu', 'ri'].map(glyph).join('');
+function wordScript(w) {
+  const lw = w.toLowerCase().replace(/[-'’]/g, '');
+  if (ENG.isSathuri(lw)) return `<span class="wd">${ENG.syllabify(lw).map(glyph).join('')}</span>`;
+  return `<span class="wd lat">${esc(w)}</span>`;
+}
+const PN = {'.': 'pn-dot', ',': 'pn-comma', '?': 'pn-q', '!': 'pn-ex', ';': 'pn-dot', ':': 'pn-dot'};
+function scriptHTML(tokens) {
+  return tokens.map(t => t.k === 'p' ? `<span class="pn ${PN[t.w] || 'pn-dot'}"></span>` : wordScript(t.w)).join('');
+}
+function glossHTML(tokens) {
+  return tokens.filter(t => t.k !== 'p').map(t =>
+    `<div class="cell${t.k === 'unk' ? ' unk' : ''}"><span class="s">${esc(t.w)}</span><span class="d">${esc(t.g)}</span></div>`).join('');
+}
+
+/* ---- Übersetzer ---- */
+let dir = 'de2sa';
+const inp = $('#in'), out = $('#out');
+const EX_DE = [
+  'Die mysteriösen Wächter beschützen das Sanktum.',
+  'Ich sehe die Sterne über dem Wald.',
+  'Wo wohnt der König?',
+  'Wir können das Geheimnis nicht verstehen.',
+  'Der alte Zauberer gibt dem Kind einen Kristall.',
+  'Ich werde morgen in die Stadt gehen.',
+];
+const EX_SA = EX_DE.map(t => ENG.translateDE(t).text);
+function setDir(d, keepText) {
+  dir = d;
+  $('#dirlabel').textContent = d === 'de2sa' ? 'Deutsch → Sathuri' : 'Sathuri → Deutsch';
+  inp.placeholder = d === 'de2sa' ? 'Schreibe einen deutschen Satz …' : 'Schreibe einen Satz auf Sathuri …';
+  inp.autocapitalize = d === 'de2sa' ? 'sentences' : 'off';
+  $('#kbd').hidden = d === 'de2sa';
+  const list = d === 'de2sa' ? EX_DE : EX_SA;
+  $('#examples').innerHTML = list.map((t, i) => `<button class="chip" type="button" data-i="${i}">${esc(t)}</button>`).join('');
+  if (!keepText) inp.value = list[0];
+  run();
+}
+function copyBtn(id) { return `<button class="copy" type="button" data-copy="${id}">Kopieren</button>`; }
+function noteHTML(notes, extra) {
+  const parts = [];
+  const unk = [...new Set(notes.unknown)];
+  if (unk.length) parts.push(`<p><span class="w">Nicht im Wörterbuch:</span> ${unk.map(esc).join(', ')}. Diese Wörter bleiben unverändert.</p>`);
+  if (notes.names && notes.names.length) parts.push(`<p>Als Name oder Fremdwort übernommen: ${notes.names.map(esc).join(', ')}.</p>`);
+  if (extra) parts.push(extra);
+  return parts.length ? `<div class="notes">${parts.join('')}</div>` : '';
+}
+function run() {
+  const txt = inp.value;
+  if (!txt.trim()) { out.innerHTML = '<p class="empty">Tippe oben einen Satz ein oder tippe auf ein Beispiel.</p>'; return; }
+  if (dir === 'de2sa') {
+    const r = ENG.translateDE(txt);
+    out.innerHTML = `<div class="card">
+      <div class="rowhead"><h2>Sathuri</h2>${copyBtn('t1')}</div>
+      <p class="big sat-out" id="t1">${esc(r.text)}</p>
+      <hr class="hr">
+      <h2>In Schrift</h2>
+      <div class="script" role="img" aria-label="${esc(r.text)}">${scriptHTML(r.tokens)}</div>
+      <hr class="hr">
+      <h2>Wort für Wort</h2>
+      <div class="gloss">${glossHTML(r.tokens)}</div>
+      ${noteHTML(r.notes)}
+    </div>`;
+  } else {
+    const r = ENG.translateCON(txt);
+    const extra = (r.notes.ira ? '<p><i>ira</i> kann er, sie oder es bedeuten. Die Übersetzung nimmt „er“.</p>' : '') + '<p>Sathuri hat keine Artikel. Die Übersetzung wählt „der, die, das“.</p>';
+    out.innerHTML = `<div class="card">
+      <div class="rowhead"><h2>Deutsch</h2>${copyBtn('t1')}</div>
+      <p class="big" id="t1">${esc(r.text)}</p>
+      <hr class="hr">
+      <h2>Eingabe in Schrift</h2>
+      <div class="script" role="img" aria-label="${esc(txt)}">${scriptHTML(r.tokens)}</div>
+      <hr class="hr">
+      <h2>Wort für Wort</h2>
+      <div class="gloss">${glossHTML(r.tokens)}</div>
+      ${noteHTML(r.notes, extra)}
+    </div>`;
+  }
+}
+let timer = 0;
+inp.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 120); });
+$('#examples').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]'); if (!b) return;
+  inp.value = (dir === 'de2sa' ? EX_DE : EX_SA)[+b.dataset.i]; run();
+});
+$('#swap').addEventListener('click', () => {
+  const t = $('#t1');
+  const carry = t && out.querySelector('.card') ? t.textContent : inp.value;
+  setDir(dir === 'de2sa' ? 'sa2de' : 'de2sa', true);
+  inp.value = carry; run();
+});
+out.addEventListener('click', e => {
+  const b = e.target.closest('button[data-copy]'); if (!b) return;
+  const text = $('#' + b.dataset.copy).textContent;
+  const done = () => { b.textContent = 'Kopiert'; setTimeout(() => { b.textContent = 'Kopieren'; }, 1400); };
+  try { navigator.clipboard.writeText(text).then(done, () => { selectText($('#' + b.dataset.copy)); b.textContent = 'Markiert'; }); }
+  catch (err) { selectText($('#' + b.dataset.copy)); b.textContent = 'Markiert'; }
+});
+function selectText(node) { const r = document.createRange(); r.selectNodeContents(node); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+/* Tastatur */
+$('#keys').innerHTML = GLYPH_LIST.map(s => `<button class="key" type="button" data-syl="${s}" aria-label="${s}">${glyph(s)}<span>${s}</span></button>`).join('');
+$('#kbd').addEventListener('click', e => {
+  const k = e.target.closest('button'); if (!k) return;
+  if (k.dataset.syl) inp.value += k.dataset.syl;
+  else if (k.dataset.ins) inp.value = inp.value.replace(/\s+$/, '') + k.dataset.ins + ' ';
+  else if (k.dataset.act === 'space') inp.value += ' ';
+  else if (k.dataset.act === 'back') inp.value = inp.value.slice(0, -1);
+  else return;
+  run();
+});
+
+/* ---- Wörterbuch ---- */
+const DICT = ENG.dictionary();
+const GROUPS = [['alle', 'Alle'], ['Nomen', 'Nomen'], ['Verb', 'Verben'], ['Adjektiv', 'Adjektive'], ['sonst', 'Sonstige']];
+let fgroup = 'alle';
+function gOf(p) { return p === 'Nomen' || p === 'Verb' || p === 'Adjektiv' ? p : 'sonst'; }
+$('#filters').innerHTML = GROUPS.map(([k, l]) => `<button class="chip" type="button" data-g="${k}" aria-pressed="${k === 'alle'}">${l}</button>`).join('');
+function renderDict() {
+  const q = $('#q').value.trim().toLowerCase();
+  const rows = DICT.map((r, i) => [r, i]).filter(([r]) => (fgroup === 'alle' || gOf(r.pos) === fgroup) &&
+    (!q || r.de.toLowerCase().includes(q) || r.c.includes(q) || r.info.toLowerCase().includes(q)));
+  $('#count').textContent = rows.length + (rows.length === 1 ? ' Wort' : ' Wörter');
+  $('#dict').innerHTML = rows.map(([r, i]) =>
+    `<details data-i="${i}"><summary><span class="c">${esc(r.c)}</span><span class="g">${esc(r.de)}</span><span class="p">${esc(r.pos)}</span></summary><div class="body"></div></details>`).join('');
+}
+$('#q').addEventListener('input', renderDict);
+$('#filters').addEventListener('click', e => {
+  const b = e.target.closest('button[data-g]'); if (!b) return;
+  fgroup = b.dataset.g;
+  document.querySelectorAll('#filters .chip').forEach(c => c.setAttribute('aria-pressed', String(c === b)));
+  renderDict();
+});
+$('#dict').addEventListener('toggle', e => {
+  const d = e.target; if (!d.open) return;
+  const body = $('.body', d); if (body.dataset.done) return;
+  const row = DICT[+d.dataset.i];
+  let h = '';
+  if (row.info) h += `<p class="info">${esc(row.info)}</p>`;
+  const par = ENG.paradigm(row);
+  if (par) {
+    const noun = row.pos === 'Nomen' || row.pos === 'Adjektiv';
+    h += `<div class="tablewrap"><table><thead><tr><th>${noun ? 'Fall' : 'Form'}</th><th>${noun ? 'Einzahl' : 'Sathuri'}</th>${noun ? '<th>Mehrzahl</th>' : ''}</tr></thead><tbody>` +
+      par.map(p => `<tr><td>${esc(p[0])}</td><td class="s">${esc(p[1])}</td>${noun ? `<td class="s">${esc(p[2])}</td>` : ''}</tr>`).join('') + '</tbody></table></div>';
+  }
+  h += `<div class="script">${wordScript(row.c)}</div>`;
+  body.innerHTML = h; body.dataset.done = '1';
+}, true);
+
+/* ---- Grammatik ---- */
+function ex(de) {
+  const r = ENG.translateDE(de);
+  return `<div class="ex"><div class="de">${esc(de)}</div><div class="sa">${esc(r.text)}</div><div class="gl2">${esc(r.tokens.filter(t => t.k !== 'p').map(t => t.g).join(' · '))}</div></div>`;
+}
+function grammarHTML() {
+  const C = ENG.CASES, S = ENG.SUF, N = ENG.CASE_NAME;
+  const Q = {nom:'wer, was?', akk:'wen, was?', gen:'wessen? (auch: von)', dat:'wem? wohin? (auch: zu, für)', loc:'wo? (in, an, bei)', abl:'woher? (aus, als beim Vergleich)', ins:'womit? (mit, durch)'};
+  const caseRows = C.map(c => `<tr><td>${N[c]}</td><td class="s">${S[c] ? '-' + S[c] : '(ohne Endung)'}</td><td class="s">${ENG.inflN('ranuko', false, c)}</td><td>${Q[c]}</td></tr>`).join('');
+  return `
+  <h2>Grammatik</h2>
+  <p>Sathuri ist streng regelmäßig. Es gibt keine Ausnahmen, keine Artikel und keine Verbendungen für Personen. Die Beispielsätze unten stammen direkt aus dem Übersetzer.</p>
+
+  <h3>1. Laute und Silben</h3>
+  <p>13 Konsonanten und 5 Vokale: <code>k t s l r m n v z d h th sh</code> und <code>a e i o u</code>. <i>th</i> und <i>sh</i> sind je ein Laut. Jede Silbe besteht aus einem Konsonanten und einem Vokal, am Wortanfang darf auch ein Vokal allein stehen. Zwei Konsonanten stehen nie hintereinander. So ergeben sich genau 70 Silben, und jede hat ein eigenes Schriftzeichen.</p>
+
+  <h3>2. Die Wortart steht am Wortende</h3>
+  <div class="rule"><b>-a / -o</b><span>Nomen: <i class="sat">ranuko</i> (Haus), <i class="sat">mashora</i> (Magie)</span>
+  <b>-u</b><span>Verben: <i class="sat">kelu</i> (gehen), <i class="sat">vesu</i> (sehen)</span>
+  <b>-i</b><span>Adjektive: <i class="sat">sathuri</i> (heilig), <i class="sat">mithari</i> (mysteriös)</span>
+  <b>-e</b><span>Adverbien, Bindewörter, Zahlen: <i class="sat">madeshe</i> (hier)</span></div>
+
+  <h3>3. Nomen: Einzahl, Mehrzahl und sieben Fälle</h3>
+  <p>Die Mehrzahl endet auf <code>-ki</code>. Danach folgt die Fallendung. Beides wird an den Stamm angehängt: <code>ranuko-ki-no</code> (die Häuser, Akkusativ).</p>
+  <div class="tablewrap"><table><thead><tr><th>Fall</th><th>Endung</th><th>Beispiel</th><th>Frage</th></tr></thead><tbody>${caseRows}</tbody></table></div>
+  ${ex('Ich sehe das Haus.')}
+  ${ex('Der Mann gibt der Frau das Buch.')}
+  ${ex('Die Kinder spielen mit den Tonlingen.')}
+  <p>„In“ mit Bewegung („in die Stadt“) steht im Dativ, ohne Bewegung („in der Stadt“) im Lokativ.</p>
+
+  <h3>4. Adjektive und Vergleiche</h3>
+  <p>Adjektive stehen hinter dem Nomen und bekommen dieselbe Mehrzahl- und Fallendung. Als Aussage mit „sein“ bleiben sie ohne Endung. Vergleiche bildet man mit <code>mo</code> (mehr) und <code>ro</code> (am meisten). Das Verglichene steht im Ablativ.</p>
+  ${ex('Die Katze des Königs ist müde.')}
+  ${ex('Die alten Bücher sind heilig und mysteriös.')}
+  ${ex('Sie ist größer als ich.')}
+  ${ex('Der Mond ist am schönsten.')}
+
+  <h3>5. Pronomen und Besitz</h3>
+  <div class="tablewrap"><table><thead><tr><th>Person</th><th>Nominativ</th><th>Akkusativ</th><th>Dativ</th><th>Besitz (Genitiv)</th></tr></thead><tbody>
+  ${[['ich',1,'sg'],['du',2,'sg'],['er / sie / es',3,'sg'],['wir',1,'pl'],['ihr',2,'pl'],['sie (Mehrzahl)',3,'pl']].map(([l,p,n]) => `<tr><td>${l}</td><td class="s">${ENG.pronCon(p,n,'nom')}</td><td class="s">${ENG.pronCon(p,n,'akk')}</td><td class="s">${ENG.pronCon(p,n,'dat')}</td><td class="s">${ENG.pronCon(p,n,'gen')}</td></tr>`).join('')}
+  </tbody></table></div>
+  <p>Der Besitzer steht im Genitiv und vor dem Besitz. So entstehen auch „mein“, „dein“ und so weiter.</p>
+  ${ex('Mein Freund liebt die Magie.')}
+  ${ex('Das Haus des Zauberers ist dunkel.')}
+
+  <h3>6. Verben</h3>
+  <div class="tablewrap"><table><thead><tr><th>Form</th><th>Endung</th><th>Beispiel</th></tr></thead><tbody>
+  <tr><td>Gegenwart</td><td class="s">(Stamm)</td><td class="s">kelu</td></tr>
+  <tr><td>Vergangenheit</td><td class="s">-ra</td><td class="s">kelura</td></tr>
+  <tr><td>Zukunft</td><td class="s">-sha</td><td class="s">kelusha</td></tr>
+  <tr><td>gerade dabei</td><td class="s">-vo</td><td class="s">keluvo (auch keluvora)</td></tr>
+  <tr><td>Befehl</td><td class="s">-de</td><td class="s">kelude</td></tr></tbody></table></div>
+  <p>Das Verb ändert sich nicht nach der Person. Wer handelt, sagt das Pronomen. Hilfsverben für Perfekt und Futur gibt es nicht. Bei Modalverben (können, müssen, wollen) bleibt das Hauptverb im Stamm, und das Modalverb steht danach.</p>
+  ${ex('Ich habe das Geheimnis gesehen.')}
+  ${ex('Ich werde morgen in die Stadt gehen.')}
+  ${ex('Wir können den Mond sehen.')}
+  ${ex('Er sieht gerade die Sterne.')}
+  ${ex('Gib mir den Schlüssel!')}
+
+  <h3>7. Satzbau, Fragen und Verneinung</h3>
+  <p>Das Verb steht immer am Ende des Satzes. Die Fälle zeigen, wer was tut, darum ist die Reihenfolge der übrigen Teile frei. Üblich ist: Subjekt, Umstände, Objekt, Verb. Eine Frage endet mit der Partikel <code>ve</code>. Verneint wird mit <code>zo</code> direkt vor dem Wort, das verneint wird. „Kein X“ heißt <code>zo X</code>.</p>
+  ${ex('Wo wohnt der König?')}
+  ${ex('Ich sehe das Haus nicht.')}
+  ${ex('Ich habe keine Angst.')}
+  ${ex('Ich weiß, dass er kommen wird.')}
+
+  <h3>8. Nachwörter und Zahlen</h3>
+  <p>Wörter wie „über, unter, vor, hinter, neben, ohne, für“ stehen hinter dem Nomen, das im Genitiv steht. Nach einem Zahlwort bleibt das Nomen in der Einzahl.</p>
+  ${ex('Der Drache fliegt über dem Berg.')}
+  ${ex('Ich habe zwei Katzen und einen Hund.')}
+
+  <h3>9. Was der Übersetzer nicht kann</h3>
+  <p>Der Übersetzer arbeitet mit Regeln und etwa 500 Wörtern. Das geht nicht: Relativsätze („der Mann, der …“), Passiv, trennbare und reflexive Verben, Konjunktiv und feste Redewendungen. Unbekannte Wörter bleiben unverändert und werden markiert. Namen bleiben ebenfalls stehen. Bei langen Sätzen hilft es, sie in kurze Sätze zu teilen.</p>`;
+}
+$('#p-grammatik').innerHTML = grammarHTML();
+
+/* ---- Schrift ---- */
+function schriftHTML() {
+  let g = '<div class="sylgrid"><span></span>' + GLYPH_VOW.map(v => `<span class="h">${v}</span>`).join('');
+  GLYPH_CONS.forEach(c => {
+    g += `<span class="rl">${c}</span>` + GLYPH_VOW.map(v => `<span class="sylcell" title="${c + v}">${glyph(c + v)}<span>${c + v}</span></span>`).join('');
+  });
+  g += '<span class="rl">–</span>' + GLYPH_VOW.map(v => `<span class="sylcell" title="${v}">${glyph(v)}<span>${v}</span></span>`).join('') + '</div>';
+  return `
+  <h2>Schrift</h2>
+  <p>Die Schrift ist eine Silbenschrift mit 70 Zeichen. Jedes Zeichen steht für eine Silbe. Man schreibt von links nach rechts und hängt die Zeichen eines Wortes an eine gemeinsame Linie, die Kopflinie. Zwischen den Wörtern bleibt eine Lücke, und die Linie reißt ab.</p>
+  <h3>So liest man ein Zeichen</h3>
+  <p>Unter der Kopflinie hängt der Körper des Zeichens, er zeigt den Konsonanten. Der Vokal steht als kleines Zusatzzeichen dabei. Kein Zusatz bedeutet <i>a</i>.</p>
+  <div class="legend">
+    <div>${glyph('ta')}kein Zusatz: a</div><div>${glyph('te')}zwei Striche oben: e</div><div>${glyph('ti')}Strich rechts: i</div><div>${glyph('to')}Ring oben: o</div><div>${glyph('tu')}Schale unten: u</div>
+  </div>
+  <p class="muted">Die Beispiele zeigen den Konsonanten <i>t</i> mit allen fünf Vokalen. Ein reiner Vokal hat als Körper nur eine offene Schale unter der Kopflinie.</p>
+  <h3>Alle 70 Zeichen</h3>
+  ${g}
+  <h3>Satzzeichen</h3>
+  <p>Ein Punkt ist ein kleiner Kreis, ein Komma ein kurzer senkrechter Strich, das Fragezeichen zwei Punkte übereinander und das Ausrufezeichen ein Strich mit Punkt darunter.</p>
+  <div class="script" style="gap:18px">${scriptHTML([{w:'.',k:'p'},{w:',',k:'p'},{w:'?',k:'p'},{w:'!',k:'p'}])}</div>`;
+}
+$('#p-schrift').innerHTML = schriftHTML();
+
+/* ---- Reiter ---- */
+const TABS = ['uebersetzer', 'woerterbuch', 'grammatik', 'schrift'];
+function showTab() {
+  const t = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'uebersetzer';
+  TABS.forEach(n => { $('#p-' + n).hidden = n !== t; });
+  document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+}
+window.addEventListener('hashchange', showTab);
+showTab();
+setDir('de2sa');
+renderDict();
+})();
+</script>
+</body>
+</html>
