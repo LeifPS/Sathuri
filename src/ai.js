@@ -1,7 +1,7 @@
 // KI-Teil: Die KI liefert NUR deutsche Grammatikdaten (Wortart, Grundform, Plural, Verbformen ...).
 // Alles, was sie liefert, wird hier streng geprüft und auf das Lexikonformat von engine.js gebracht.
 
-export const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+export const DEFAULT_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 
 const SYSTEM = `You are a precise German grammar database. The user sends exactly ONE German word (it may be an inflected form). Answer with the dictionary data as JSON.
 
@@ -40,7 +40,9 @@ export async function askAI(env, word) {
     max_tokens: 400,
     temperature: 0,
   });
-  let r = res && typeof res === 'object' && 'response' in res ? res.response : res;
+  let r = res;
+  if (r && Array.isArray(r.choices) && r.choices[0]) r = r.choices[0].message ? r.choices[0].message.content : r.choices[0].text;   // OpenAI-Format
+  else if (r && typeof r === 'object' && 'response' in r) r = r.response;                                                          // Workers-AI-Format
   if (typeof r === 'string') {
     const m = r.match(/\{[\s\S]*\}/);
     if (!m) throw new Error('KI-Antwort ohne JSON');
