@@ -37,8 +37,9 @@ export async function askAI(env, word) {
   const res = await env.AI.run(env.MODEL || DEFAULT_MODEL, {
     messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: word }],
     response_format: { type: 'json_schema', json_schema: SCHEMA },
-    max_tokens: 400,
+    max_tokens: 500,
     temperature: 0,
+    chat_template_kwargs: { enable_thinking: false },   // Gemma 4 denkt sonst und verbraucht alle Token fürs Nachdenken
   });
   let r = res;
   if (r && Array.isArray(r.choices) && r.choices[0]) r = r.choices[0].message ? r.choices[0].message.content : r.choices[0].text;   // OpenAI-Format
